@@ -2,7 +2,7 @@
 
 更新时间：2026-09-19
 
-- 当前目标：DeerFlow 原版、DeepSeek 与 B1 影子校验已跑通；B1.1 持久化事件与结构化 Claim/Evidence 的正式设计已起草，等待用户复核书面规格后再制定实施计划。
+- 当前目标：DeerFlow 原版、DeepSeek 与 B1 影子校验已跑通；用户已确认 B1.1 正式规格，实施计划已起草，等待计划复核与执行方式确认后再改产品代码。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
 - 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
@@ -210,3 +210,9 @@
 - 结构化结束契约名为 submit_evidence_report；必须直接结束并用测试证明其后没有为了质检新增模型调用。普通聊天、未允许账号和未启用 profile 的 run 保持原样。
 - 用户明确决定暂不设置 Claim、Evidence、摘录或 Token 的产品硬上限；先在免费离线与零费用集成测试通过后，另行授权一个真实付费样本，记录 Token、调用、延迟、费用和结构体积，再决定阈值。不得据此自动运行 T002 或批量样本。
 - 正式规格：docs/superpowers/specs/2026-09-19-persistent-evidence-contract-design.md。当前只是设计，不代表已实现；本阶段没有模型调用或 API 费用。下一步等待用户书面规格复核，确认后才能进入实施计划。
+## 2026-09-19 B1.1 实施计划
+
+- 用户已确认 `docs/superpowers/specs/2026-09-19-persistent-evidence-contract-design.md`；这只确认规格，不等于授权跳过实施计划复核。
+- 已创建 `docs/superpowers/plans/2026-09-19-persistent-evidence-contract.md`，拆为 7 个任务：提交契约、直接结束工具、profile 灰度、事件持久化就绪、真实事件采集、确定性校验闭环、引用与本机零费用验收。
+- 计划执行阶段不调用真实模型、不运行 T002、不设置 Token 产品硬上限；先用假模型和程序化 run 证明直接结束、跨重启持久化、引用跳转和 B0 兼容。一个真实付费样本仍需计划完成后单独授权。
+- 当前未修改产品代码、未调用模型、未产生 API 费用。下一步等待用户确认计划并选择执行方式；推荐当前任务原地串行执行，便于沿用本机 SQLite、Docker 和忽略配置，且不增加多智能体协调成本。
