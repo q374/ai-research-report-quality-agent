@@ -155,3 +155,13 @@
 - 已创建 `docs/product/EVIDENCE_VALIDATOR_OFFLINE_WALKTHROUGH.md`，用 T001 v1 至 v3 既有结果进行人工离线走查。8 项已知阻断问题均能映射到规则，三条样本均应 blocked；这是规则覆盖走查，不是程序召回率或生产效果。
 - 设计阶段没有调用模型、没有新增 API 费用、没有修改 DeerFlow 原版生成链。程序实现尚未开始。
 - 下一步：先由用户评审规格；确认后再进入阶段 A 离线确定性原型，只复用既有样本，不联网、不调用模型。
+
+
+## 2026-09-19 独立证据校验器阶段 A 离线原型
+
+- 已实现 `scripts/evidence_validator.py`，使用 Python 标准库执行 EV-01 至 EV-10 的离线确定性检查；不联网、不调用模型、不增加第三方依赖，也未修改 DeerFlow 前后端生成链。
+- 已保存 T001 v1 至 v3 的结构化固定夹具和结果。程序计算正文字符数为 1217、575、877；v3 的 4 次页面查看经锚点和别名归一后为 2 个唯一页面。
+- 7 项单元测试全部通过；三份已知 Badcase 均为 `blocked`，8 项人工登记的已知阻断问题全部命中，无错误放行。无阻断对照样本仍需人工批准才能从 `review_required` 进入 `confirmed`。
+- 真实性边界：结果只覆盖三份已知合成样本；尚未验证未知样本、误报率、真实用户效率或生产稳定性。Claim、EvidenceItem 和运行日志目前由固定夹具提供，尚未从 DeerFlow 自动采集。
+- 本阶段新增模型调用 0 次，新增 API 费用 0 元。下一步先做产品评审，确认输入契约和误报风险；未经新范围确认，不接入 DeerFlow、不运行 T002 或新的付费样本。
+- 验证入口：`docs/product/evidence-validator-results/SUMMARY.md`；实现与测试入口：`scripts/evidence_validator.py`、`tests/product/test_evidence_validator.py`。

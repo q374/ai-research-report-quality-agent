@@ -1,0 +1,61 @@
+{
+  "task_id": "T001-v1",
+  "status": "blocked",
+  "metrics": {
+    "actual_chars": 1217,
+    "page_views": 3,
+    "unique_pages": 2,
+    "searches": 2
+  },
+  "finding_counts": {
+    "blocker": 4,
+    "warning": 1,
+    "info": 0
+  },
+  "findings": [
+    {
+      "rule_id": "EV-01",
+      "severity": "blocker",
+      "claim_id": "v1-c1",
+      "evidence_ids": [
+        "e-launch"
+      ],
+      "message": "当前事实只依赖历史或过期证据。",
+      "required_action": "补充当前来源，或把结论明确改写为历史事实。"
+    },
+    {
+      "rule_id": "EV-03",
+      "severity": "blocker",
+      "claim_id": "v1-c6",
+      "evidence_ids": [
+        "e-metric"
+      ],
+      "message": "否定性结论与已绑定证据摘录中的反例冲突。",
+      "required_action": "展示反例并改写结论，不能把已披露内容写成未知。"
+    },
+    {
+      "rule_id": "EV-04",
+      "severity": "blocker",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "缺少必填研究维度：model_quality_limit",
+      "required_action": "补充对应 Claim；确实未知时也应显式记录未知及其证据。"
+    },
+    {
+      "rule_id": "EV-06",
+      "severity": "blocker",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "正文 1217 字符，超过上限 800",
+      "required_action": "按系统实际统计值缩减输出或重新执行受控任务。"
+    },
+    {
+      "rule_id": "EV-07",
+      "severity": "warning",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "3 次页面查看规范化后为 2 个唯一页面。",
+      "required_action": "合并重复来源，但不要抹去真实页面查看次数。"
+    }
+  ]
+}

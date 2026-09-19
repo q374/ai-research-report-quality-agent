@@ -1,0 +1,179 @@
+{
+  "brief": {
+    "task_id": "T001-v3",
+    "required_dimensions": [
+      "capability",
+      "scope",
+      "operational_limit",
+      "model_quality_limit",
+      "usage",
+      "time"
+    ],
+    "allowed_domains": [
+      "openai.com",
+      "help.openai.com"
+    ],
+    "time_scope": "as_of_access_date",
+    "max_searches": 2,
+    "max_pages": 4,
+    "max_chars": 800,
+    "forbidden_tools": [
+      "subagent",
+      "file_generation"
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "v3-c1",
+      "text": "可规划、研究并综合复杂问题。",
+      "claim_type": "current_fact",
+      "dimension": "capability",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v3-c2",
+      "text": "默认来源包括公开网页与上传文件。",
+      "claim_type": "current_fact",
+      "dimension": "scope",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v3-c3",
+      "text": "权限与来源受到约束。",
+      "claim_type": "current_fact",
+      "dimension": "operational_limit",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v3-c4",
+      "text": "用量随套餐变化。",
+      "claim_type": "current_fact",
+      "dimension": "usage",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v3-c5",
+      "text": "2025-02-02 发布。",
+      "claim_type": "historical_fact",
+      "dimension": "time",
+      "evidence_ids": [
+        "e-launch"
+      ],
+      "citation_evidence_ids": [
+        "e-launch"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v3-c6",
+      "text": "已读页面未披露幻觉、错误推断、权威来源识别与置信度校准问题，模型质量项未知。",
+      "claim_type": "unknown",
+      "dimension": "model_quality_limit",
+      "evidence_ids": [
+        "e-limit"
+      ],
+      "citation_evidence_ids": [
+        "e-limit"
+      ],
+      "is_key": true
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "e-help",
+      "source_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "canonical_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "title": "Deep research in ChatGPT",
+      "published_at": null,
+      "accessed_at": "2026-09-19",
+      "excerpt": "plan, research, and synthesize complex questions",
+      "status": "confirmed",
+      "current_source": true
+    },
+    {
+      "evidence_id": "e-help-alias",
+      "source_url": "https://help.openai.com/en/articles/10500283-deep-research-faq",
+      "canonical_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "title": "Deep research FAQ",
+      "published_at": null,
+      "accessed_at": "2026-09-19",
+      "excerpt": "public web and uploaded files",
+      "status": "confirmed",
+      "current_source": true
+    },
+    {
+      "evidence_id": "e-launch",
+      "source_url": "https://openai.com/index/introducing-deep-research/",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "launched February 2, 2025",
+      "status": "confirmed",
+      "current_source": false
+    },
+    {
+      "evidence_id": "e-limit",
+      "source_url": "https://openai.com/index/introducing-deep-research/#limitations",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research - Limitations",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration",
+      "status": "confirmed",
+      "current_source": false
+    }
+  ],
+  "report": {
+    "report_id": "T001-v3",
+    "rendered_text": "T001 v3 核验结果（已读3页：help.openai.com「Deep research in ChatGPT」当前页；openai.com「Introducing deep research」发布页）\n\n当前事实\n\n定位：Chat/Work/Codex 中规划、研究、综合复杂问题并输出来源引用报告 citation:Deep research in ChatGPT\n流程：描述目标→生成/修改研究计划→可实时跟踪并中断调整来源→产出含引用报告 [同上]\n默认来源：公开网络、上传文件；Chat 经 @Deepresearch 或工具菜单启动 [同上]\n可接入已授权连接应用/MCP，并限制为可信站点 citation:Introducing deep research 2026-02-10 update\n用量随套餐变化，按首次使用起30天重置；Work 用 Work/Codex 额度 [help 页]\n页面更新时间：help 页标注“Updated: 8 days ago”（约 2026-09-11）[help 页]\n\n历史信息\n\n2025-02-02 发布，基于 o3 版本 citation:Introducing deep research\n发布时：2025-02-25 Plus 全面开放；2025-04-24 额度提升并引入 o4-mini 轻量版；2025-07-17 并入 agent 可视浏览器 [同上]\n这些为历史发布时状态 [同上]\n\n主要限制（模型质量）\n\n已读页面未披露幻觉/置信度校准/错误推断等模型质量失败模式 → 模型质量项：未知\n可确认的仅为权限/来源约束：启动不额外授予文件或应用访问权限，受会话工具、工作区限制与提供方权限约束 [help 页]\n注：套餐与额度不属模型质量限制 [help 页]\n\n待人工复核项\n\n在 OpenAI 官方当前页面中，Deep Research 的幻觉、错误推断、权威来源识别与置信度校准失败模式是否有官方描述？\n\n（总字符约560，符合≤800。已停止，不追加新任务。）",
+    "observed_searches": 2,
+    "observed_page_urls": [
+      "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "https://help.openai.com/en/articles/10500283-deep-research-faq",
+      "https://openai.com/index/introducing-deep-research/",
+      "https://openai.com/index/introducing-deep-research/#limitations"
+    ],
+    "used_tools": [
+      "web_search",
+      "web_fetch"
+    ],
+    "token_usage": {
+      "input": 0,
+      "output": 0
+    },
+    "latency_seconds": 0,
+    "self_reported_chars": 560
+  },
+  "audit": {
+    "model": "deepseek-flash",
+    "prompt_version": "t001-v3",
+    "accessed_at": "2026-09-19",
+    "cost_estimate_cny": 0.104056,
+    "human_review": "pending"
+  }
+}

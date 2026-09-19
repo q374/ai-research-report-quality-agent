@@ -1,0 +1,51 @@
+{
+  "task_id": "T001-v3",
+  "status": "blocked",
+  "metrics": {
+    "actual_chars": 877,
+    "page_views": 4,
+    "unique_pages": 2,
+    "searches": 2
+  },
+  "finding_counts": {
+    "blocker": 2,
+    "warning": 2,
+    "info": 0
+  },
+  "findings": [
+    {
+      "rule_id": "EV-03",
+      "severity": "blocker",
+      "claim_id": "v3-c6",
+      "evidence_ids": [
+        "e-limit"
+      ],
+      "message": "否定性结论与已绑定证据摘录中的反例冲突。",
+      "required_action": "展示反例并改写结论，不能把已披露内容写成未知。"
+    },
+    {
+      "rule_id": "EV-06",
+      "severity": "blocker",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "正文 877 字符，超过上限 800",
+      "required_action": "按系统实际统计值缩减输出或重新执行受控任务。"
+    },
+    {
+      "rule_id": "EV-06",
+      "severity": "warning",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "模型自报 560 字符，系统实际为 877。",
+      "required_action": "界面和发布判断只采用系统实际统计值。"
+    },
+    {
+      "rule_id": "EV-07",
+      "severity": "warning",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "4 次页面查看规范化后为 2 个唯一页面。",
+      "required_action": "合并重复来源，但不要抹去真实页面查看次数。"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "task_id": "T001-v2",
+  "status": "blocked",
+  "metrics": {
+    "actual_chars": 575,
+    "page_views": 3,
+    "unique_pages": 3,
+    "searches": 2
+  },
+  "finding_counts": {
+    "blocker": 2,
+    "warning": 0,
+    "info": 0
+  },
+  "findings": [
+    {
+      "rule_id": "EV-08",
+      "severity": "blocker",
+      "claim_id": "v2-c6",
+      "evidence_ids": [],
+      "message": "待复核问题包含没有证据支持的事件前提。",
+      "required_action": "改写为中性问题，或补充该事件的直接来源。"
+    },
+    {
+      "rule_id": "EV-04",
+      "severity": "blocker",
+      "claim_id": null,
+      "evidence_ids": [],
+      "message": "缺少必填研究维度：model_quality_limit",
+      "required_action": "补充对应 Claim；确实未知时也应显式记录未知及其证据。"
+    }
+  ]
+}

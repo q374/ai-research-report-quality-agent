@@ -197,4 +197,14 @@ v3 说明“规则写进提示词”不等于“模型会正确执行规则”�
 - 离线走查：`docs/product/EVIDENCE_VALIDATOR_OFFLINE_WALKTHROUGH.md`。
 - 首版采用确定性规则，覆盖当前性、结论—证据绑定、否定性结论反查、必填维度、引用直接性、字符与范围、URL 规范化、待复核项前提、冲突过期和审计完整性。
 - 人工离线走查将 T001 v1 至 v3 的 8 项已知阻断问题全部映射到规则，三条样本均应保持 `blocked`。这是规则覆盖走查，不是程序已实现或真实准确率。
-- 当前只完成设计，尚未接入 DeerFlow、尚未开发校验程序，也没有新增模型调用或 API 费用。
+- 阶段 A 离线校验程序已完成，尚未接入 DeerFlow；本阶段没有新增模型调用或 API 费用。
+
+
+## 14. 阶段 A 自动校验结果
+
+- 实现入口：`scripts/evidence_validator.py`。
+- 固定样本：`tests/product/fixtures/`；结果：`docs/product/evidence-validator-results/`。
+- 7 项单元测试通过；T001 v1、v2、v3 均为 `blocked`，8 项人工登记的已知阻断问题全部命中。
+- v3 的正文由程序计为 877 字符，不采用模型自报的约 560；4 次页面查看经规范化后为 2 个唯一页面。
+- 无阻断的对照样本仍为 `review_required`，只有人工批准后才转为 `confirmed`。
+- 真实性边界：这是三份已知合成样本回归，不是未知样本准确率或生产效果；尚未接入 DeerFlow。

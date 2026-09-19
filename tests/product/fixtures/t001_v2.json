@@ -1,0 +1,162 @@
+{
+  "brief": {
+    "task_id": "T001-v2",
+    "required_dimensions": [
+      "capability",
+      "scope",
+      "operational_limit",
+      "model_quality_limit",
+      "usage",
+      "time"
+    ],
+    "allowed_domains": [
+      "openai.com",
+      "help.openai.com"
+    ],
+    "time_scope": "as_of_access_date",
+    "max_searches": 2,
+    "max_pages": 4,
+    "max_chars": 800,
+    "forbidden_tools": [
+      "subagent",
+      "file_generation"
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "v2-c1",
+      "text": "可规划、研究并综合复杂问题。",
+      "claim_type": "current_fact",
+      "dimension": "capability",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v2-c2",
+      "text": "默认来源包括公开网页与上传文件。",
+      "claim_type": "current_fact",
+      "dimension": "scope",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v2-c3",
+      "text": "可用性受权限和工作区设置约束。",
+      "claim_type": "current_fact",
+      "dimension": "operational_limit",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v2-c4",
+      "text": "用量随套餐变化。",
+      "claim_type": "current_fact",
+      "dimension": "usage",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v2-c5",
+      "text": "2025-02-02 发布。",
+      "claim_type": "historical_fact",
+      "dimension": "time",
+      "evidence_ids": [
+        "e-launch"
+      ],
+      "citation_evidence_ids": [
+        "e-launch"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v2-c6",
+      "text": "Pro $200 暂停注册对深研可用性的影响：未知",
+      "claim_type": "review_question",
+      "dimension": "review",
+      "evidence_ids": [],
+      "citation_evidence_ids": [],
+      "is_key": false
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "e-help",
+      "source_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "canonical_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "title": "Deep research in ChatGPT",
+      "published_at": null,
+      "accessed_at": "2026-09-19",
+      "excerpt": "plan, research, and synthesize complex questions",
+      "status": "confirmed",
+      "current_source": true
+    },
+    {
+      "evidence_id": "e-launch",
+      "source_url": "https://openai.com/index/introducing-deep-research/",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "launched February 2, 2025",
+      "status": "confirmed",
+      "current_source": false
+    },
+    {
+      "evidence_id": "e-notes",
+      "source_url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes",
+      "canonical_url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes",
+      "title": "ChatGPT release notes",
+      "published_at": null,
+      "accessed_at": "2026-09-19",
+      "excerpt": "Lockdown Mode disables networked capabilities",
+      "status": "confirmed",
+      "current_source": true
+    }
+  ],
+  "report": {
+    "report_id": "T001-v2",
+    "rendered_text": "T001 v2 核验结果（访问日期：2026-09-19）\n\n一、当前事实\n\n定位：在 Chat/Work/Codex 中规划、研究并综合复杂问题，产出带引用的结构化报告 help\n启动：输入 @Deepresearch 或工具菜单选 Deep research；可随时打断、筛选来源 help\nChat 默认来源：公开网页＋上传文件 help\nWork/Codex 用现有 Work/Codex 额度或积分，不占 Chat 额度 help\n帮助页更新：8 天前 help\n\n二、历史信息（发布时）\n\n2025-02-02 发布，基于 o3 版本 发布页\n2025-02-25 Plus 全量；2025-04-24 配额 25/250/5 发布页\n\n三、主要限制/失败模式\n\n用量按套餐，额度以产品内计数器为准；固定月度额度自首次使用起每 30 天重置 help\n可用性取决于套餐、地区、工作区配置、角色权限与连接账号权限 help\n启动深研不额外授予文件/应用访问权 help\nLockdown Mode 会禁用 deep research 等联网能力 release notes\n\n四、待人工复核项\n\n当前各套餐精确配额数字：未知（帮助页指向其他页面）\nPro $200 暂停注册对深研可用性的影响：未知\n历史配额是否仍有效：未知，以当前页面为准",
+    "observed_searches": 2,
+    "observed_page_urls": [
+      "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "https://openai.com/index/introducing-deep-research/",
+      "https://help.openai.com/en/articles/6825453-chatgpt-release-notes"
+    ],
+    "used_tools": [
+      "web_search",
+      "web_fetch"
+    ],
+    "token_usage": {
+      "input": 0,
+      "output": 0
+    },
+    "latency_seconds": 0
+  },
+  "audit": {
+    "model": "deepseek-flash",
+    "prompt_version": "t001-v2",
+    "accessed_at": "2026-09-19",
+    "cost_estimate_cny": 0.072,
+    "human_review": "pending"
+  }
+}

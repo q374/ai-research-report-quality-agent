@@ -1,0 +1,177 @@
+{
+  "brief": {
+    "task_id": "T001-v1",
+    "required_dimensions": [
+      "capability",
+      "scope",
+      "operational_limit",
+      "model_quality_limit",
+      "usage",
+      "time"
+    ],
+    "allowed_domains": [
+      "openai.com",
+      "help.openai.com"
+    ],
+    "time_scope": "as_of_access_date",
+    "max_searches": 2,
+    "max_pages": 4,
+    "max_chars": 800,
+    "forbidden_tools": [
+      "subagent",
+      "file_generation"
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "v1-c1",
+      "text": "当前由 o3 版本驱动。",
+      "claim_type": "current_fact",
+      "dimension": "capability",
+      "evidence_ids": [
+        "e-launch"
+      ],
+      "citation_evidence_ids": [
+        "e-launch"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v1-c2",
+      "text": "适用于跨来源的多步骤研究。",
+      "claim_type": "current_fact",
+      "dimension": "scope",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v1-c3",
+      "text": "快速查询可使用标准聊天。",
+      "claim_type": "current_fact",
+      "dimension": "operational_limit",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v1-c4",
+      "text": "用量因套餐而异。",
+      "claim_type": "current_fact",
+      "dimension": "usage",
+      "evidence_ids": [
+        "e-help"
+      ],
+      "citation_evidence_ids": [
+        "e-help"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v1-c5",
+      "text": "发布于 2025-02-02。",
+      "claim_type": "historical_fact",
+      "dimension": "time",
+      "evidence_ids": [
+        "e-launch"
+      ],
+      "citation_evidence_ids": [
+        "e-launch"
+      ],
+      "is_key": true
+    },
+    {
+      "claim_id": "v1-c6",
+      "text": "未找到官方量化性能指标（如准确率）。",
+      "claim_type": "unknown",
+      "dimension": "quantitative_evaluation",
+      "evidence_ids": [
+        "e-metric"
+      ],
+      "citation_evidence_ids": [
+        "e-metric"
+      ],
+      "is_key": true
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "e-help",
+      "source_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "canonical_url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "title": "Deep research in ChatGPT",
+      "published_at": null,
+      "accessed_at": "2026-09-19",
+      "excerpt": "plan, research, and synthesize complex questions",
+      "status": "confirmed",
+      "current_source": true
+    },
+    {
+      "evidence_id": "e-launch",
+      "source_url": "https://openai.com/index/introducing-deep-research/",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "powered by a version of o3",
+      "status": "stale",
+      "current_source": false
+    },
+    {
+      "evidence_id": "e-limit",
+      "source_url": "https://openai.com/index/introducing-deep-research/#limitations",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research - Limitations",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration",
+      "status": "confirmed",
+      "current_source": false
+    },
+    {
+      "evidence_id": "e-metric",
+      "source_url": "https://openai.com/index/introducing-deep-research/",
+      "canonical_url": "https://openai.com/index/introducing-deep-research/",
+      "title": "Introducing deep research - Evaluation",
+      "published_at": "2025-02-02",
+      "accessed_at": "2026-09-19",
+      "excerpt": "scores a new high at 26.6% accuracy",
+      "status": "confirmed",
+      "current_source": false
+    }
+  ],
+  "report": {
+    "report_id": "T001-v1",
+    "rendered_text": "T001 核验结果：ChatGPT Deep Research（仅 OpenAI 官方来源）\n1. 核心能力\n一种「agentic」能力，可自主在互联网上进行多步骤研究，并产出带引用的结构化报告 citation:Introducing deep research。\n由针对网页浏览与数据分析优化的 o3 版本驱动，能搜索、解读、分析互联网上的文本、图片与 PDF citation:Introducing deep research。\n帮助\"调查复杂问题、比较证据并产出带引用或来源链接的结果\"；可在 Chat、Work 与 Codex 中使用 citation:Deep research in ChatGPT。\n默认在 Chat 中可访问公开网页与用户上传文件 citation:Deep research in ChatGPT。\n2. 适用范围\n适用于需要跨多个来源整合分析信息的多步骤或深度问题，尤其是需要对来源进行明确控制的场景 citation:Deep research in ChatGPT。\n面向从事金融、科学、政策、工程等密集知识工作的人群；也适用于需要仔细调研的购物场景（如汽车、家电、家具）citation:Introducing deep research。\n3. 主要限制\n快速查询或简短对话，标准聊天可能更快 citation:Deep research in ChatGPT。\n用量因套餐而异；有固定月度额度的套餐自首次使用起每 30 天重置 citation:Deep research in ChatGPT。\n达到完整版额度后，查询会自动切换到轻量版（基于 o4-mini 版本）citation:Introducing deep research。\n具体错误率/幻觉率等量化限制：未知（所读页面未列明）。\n4. 页面发布时间 / 访问日期\n《Introducing deep research》官方发布日期：2025 年 2 月 2 日 citation:Introducing deep research。\n页面内更新记录最新至 2026 年 2 月 10 日 citation:Introducing deep research。\n帮助中心文章标注「Updated: 7 days ago」，未显示绝对日期 citation:Deep research in ChatGPT。\n本次访问日期：2026-09-19。\n待人工复核项\n帮助中心文章未给出绝对更新时间，仅\"7 days ago\"；需登录/人工确认确切日期。\n未找到官方量化性能指标（如准确率），需人工核查是否另有官方评估页。\n各套餐具体额度数值以官方 Plus/Pro 页面为准，本次未逐一读取，需人工核对。\n所用两个页面 URL 均为官方域名；CDN PDF 版页面未读取，如需要请人工确认。\n\n（已按要求停止，未生成新任务。）",
+    "observed_searches": 2,
+    "observed_page_urls": [
+      "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "https://openai.com/index/introducing-deep-research/",
+      "https://openai.com/index/introducing-deep-research/#limitations"
+    ],
+    "used_tools": [
+      "web_search",
+      "web_fetch"
+    ],
+    "token_usage": {
+      "input": 0,
+      "output": 0
+    },
+    "latency_seconds": 0
+  },
+  "audit": {
+    "model": "deepseek-flash",
+    "prompt_version": "t001-v1",
+    "accessed_at": "2026-09-19",
+    "cost_estimate_cny": 0.092736,
+    "human_review": "pending"
+  }
+}
