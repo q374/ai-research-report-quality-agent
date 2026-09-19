@@ -15,7 +15,7 @@
 # ============================================================================
 # Bump this number when the config schema changes.
 # Run `make config-upgrade` to merge new fields into your local config.yaml.
-config_version: 14
+config_version: 15
 
 # ============================================================================
 # Logging
@@ -31,6 +31,17 @@ log_level: info
 # and shows usage metadata in the workspace UI when providers return it.
 token_usage:
   enabled: true
+
+# ============================================================================
+# Evidence Validation Shadow Mode
+# ============================================================================
+# Disabled by default. Add only local test-account IDs to config.yaml;
+# never commit real account IDs to this example file.
+evidence_validation:
+  enabled: false
+  quality_profile_ids:
+    - evidence-research-v1
+  allowed_user_ids: []
 
 # ============================================================================
 # Models Configuration

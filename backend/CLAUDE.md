@@ -721,3 +721,5 @@ See `docs/` directory for detailed documentation:
 ### Evidence Evaluation Core
 
 Deterministic evidence validation lives in `packages/harness/deerflow/evaluation/`. It must stay free of network, database, and `app.*` dependencies. Root-level `scripts/evidence_validator.py` and `scripts/evidence_review_workflow.py` are compatibility wrappers only; do not add a second implementation there.
+
+Shadow execution is controlled by `EvidenceValidationConfig` in `packages/harness/deerflow/config/evidence_validation_config.py`. It is disabled by default and requires both an allowed user ID and an allowed quality-profile ID; `config.example.yaml` must keep `allowed_user_ids` empty.
