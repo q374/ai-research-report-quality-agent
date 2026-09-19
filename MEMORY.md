@@ -9,7 +9,7 @@
 - 本目录新增 AGENTS.md、MEMORY.md 为项目规则与状态，不是产品功能。
 - 运行入口：Install.md、Makefile、scripts/docker.sh、docker/docker-compose-dev.yaml。backend/frontend 子目录规则按需读取。
 - 当前运行：Docker 上的 frontend、gateway、nginx 健康；Dify 容器保持停止，避免同时占用内存。DeepSeek Flash 已完成基础对话和 T001 联网评测。
-- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。暂停追加付费回归与 T002，先设计确定性证据校验。
+- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。独立证据校验器 v1.0 产品设计与人工离线走查已完成，程序实现尚未开始；暂停追加付费回归与 T002。
 - 产品规格与评测证据见 `docs/product/PRODUCT_OPPORTUNITY.md` 和 `docs/product/DEERFLOW_EVALUATION_SCORECARD.xlsx`；始终保留合成数据、真实 API、人工复核和生产发布之间的真实性边界。
 
 ## 模型输入准备
@@ -146,3 +146,12 @@
 - 正向变化：当前与历史信息已分区；待复核项改为中性问题，没有继续引入“套餐暂停”等无依据事件前提。
 - 关键失败：模型已查看官方发布页 limitations 段，却错误写成“页面未披露”幻觉、错误推断、权威来源识别和置信度校准问题；页面可见正文 877 个总字符，却自报约 560 并声称符合 800 上限。
 - 决策：停止继续堆叠提示词或扩大付费样本。先免费设计确定性证据校验，包括否定性结论反查、必填维度覆盖、程序字符计数、URL 规范化和人工发布闸门；能拦截 T001 v1 至 v3 已知 Badcase 后再考虑新付费回归。
+
+## 2026-09-19 独立证据校验器 v1.0 设计
+
+- 已创建 `docs/product/EVIDENCE_VALIDATOR_SPEC.md`，定义研究 Agent 与人工发布之间的独立质量闸门。核心对象为 ResearchBrief、Claim、EvidenceItem、ValidationFinding、ResearchReport；证据状态使用 pending、confirmed、conflict、stale。
+- 首版定义 EV-01 至 EV-10：当前性、结论—证据绑定、否定性结论反查、必填维度覆盖、引用直接性、字符与范围、URL 规范化、待复核项前提、冲突过期、审计完整性。
+- 发布状态为 blocked、review_required、confirmed、rejected；存在任一未解决阻断项即 fail-closed，自动校验不能替代人工批准。
+- 已创建 `docs/product/EVIDENCE_VALIDATOR_OFFLINE_WALKTHROUGH.md`，用 T001 v1 至 v3 既有结果进行人工离线走查。8 项已知阻断问题均能映射到规则，三条样本均应 blocked；这是规则覆盖走查，不是程序召回率或生产效果。
+- 设计阶段没有调用模型、没有新增 API 费用、没有修改 DeerFlow 原版生成链。程序实现尚未开始。
+- 下一步：先由用户评审规格；确认后再进入阶段 A 离线确定性原型，只复用既有样本，不联网、不调用模型。
