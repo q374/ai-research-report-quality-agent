@@ -718,3 +718,6 @@ See `docs/` directory for detailed documentation:
 - [PATH_EXAMPLES.md](docs/PATH_EXAMPLES.md) - Path types and usage
 - [summarization.md](docs/summarization.md) - Context summarization
 - [plan_mode_usage.md](docs/plan_mode_usage.md) - Plan mode with TodoList
+### Evidence Evaluation Core
+
+Deterministic evidence validation lives in `packages/harness/deerflow/evaluation/`. It must stay free of network, database, and `app.*` dependencies. Root-level `scripts/evidence_validator.py` and `scripts/evidence_review_workflow.py` are compatibility wrappers only; do not add a second implementation there.
