@@ -2,14 +2,14 @@
 
 更新时间：2026-09-19
 
-- 当前目标：DeerFlow 原版与 DeepSeek 已跑通，正在用合成题集学习并验证证据优先产品情报 Agent；产品功能开发尚未开始。
+- 当前目标：DeerFlow 原版与 DeepSeek 已跑通；B1 证据校验影子链路已完成本地验收，下一步从 AI 产品经理视角学习验收结果并决定是否先补持久化事件与结构化 Claim/Evidence。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
 - 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
 - 本目录新增 AGENTS.md、MEMORY.md 为项目规则与状态，不是产品功能。
 - 运行入口：Install.md、Makefile、scripts/docker.sh、docker/docker-compose-dev.yaml。backend/frontend 子目录规则按需读取。
 - 当前运行：Docker 上的 frontend、gateway、nginx 健康；Dify 容器保持停止，避免同时占用内存。DeepSeek Flash 已完成基础对话和 T001 联网评测。
-- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。独立证据校验器已完成阶段 A 与 B0 离线实现，31 项产品测试通过；B1 影子接入仅完成设计和实施计划，尚未写入 backend 或真实链路。暂停追加付费回归与 T002。
+- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。阶段 A、B0 与 B1 已完成：真实旧 run 的零费用重放、幂等、重启持久化和权限边界已验证；语义仍为 not_evaluable，暂停追加付费回归与 T002。
 - 产品规格与评测证据见 `docs/product/PRODUCT_OPPORTUNITY.md` 和 `docs/product/DEERFLOW_EVALUATION_SCORECARD.xlsx`；始终保留合成数据、真实 API、人工复核和生产发布之间的真实性边界。
 
 ## 模型输入准备
@@ -191,3 +191,14 @@
 - 自动回调要求 run metadata 含质量配置；已有 run 可由允许账号显式提交质量配置与 ResearchBrief 做手动零费用重放，且不修改原 run metadata、不调用模型。
 - 缺少结构化 Claim/Evidence 必须标为 `not_evaluable`；自动流程不能产生人工确认。查询和重放都要求所有者权限，跨用户统一 404。
 - 计划已补齐并发幂等、异常脱敏、数据库迁移、重启持久化、backend 全量测试与旧 run 零新增模型调用验收。下一步等待用户确认按当前任务串行执行；确认前不修改 backend。
+## 2026-09-19 B1 证据校验影子链路验收
+
+- 分支 `codex/product-intelligence-mvp`；B1 实现提交包括 `e1e57216`、`616eefa3`、`1639d0ed`、`20a04a75`、`6b1804d3`，最终文档提交尚待本轮完成。未推送、未发布。
+- 已接入确定性校验核心、默认关闭的账号/profile 灰度、Alembic `0003_evidence_validations`、幂等 SQL 仓储、run/event 采集、后台影子调度及受保护 GET/POST API。影子失败不改变主 run。
+- 本机 Git 忽略的 `config.yaml` 只允许 1 个真实测试账号和 `evidence-research-v1`；账号 ID、密钥和完整工具参数未提交。
+- 使用既有 T001 v3 run `f66e3bce-6be5-4548-a508-08323076a6ca` 做两次手动重放，均 HTTP 200 且 validation_id 相同。输入 48,491、输出 965、总量 49,456、模型调用数 5 前后不变；验收窗口新增 chat/completions 日志 0，故本次新增模型调用和费用均为 0。
+- Gateway 重启后 GET 仍返回同一 validation_id/report_hash；不存在 run 返回 404。第二真实账号手工越权未测，自动化跨所有者 404 已通过。
+- 真实记录状态为 review_required / not_evaluable。因为旧 run events 使用 memory backend 且已重启，搜索、页面和工具无法恢复，记录明确包含 missing_final_answer_event；0 次观测不能解释为原任务没有工具行为。
+- 验证：B1 专项 35 passed；持久化和边界 49 passed；产品测试 31 passed；B0 8 样本零不一致；Ruff、compileall、diff-check 通过。后端全量为 4,746 passed、79 failed、21 skipped，不是全绿；失败为既有 Windows 差异及隔离可复现的 Windows 时间戳/顺序问题，B1 专项无失败。
+- 当前 Docker 的 frontend、gateway、nginx 健康，Dify 运行容器 0。详细验收见 `docs/product/evidence-validator-results/B1_SHADOW_ACCEPTANCE.md`。
+- 下一步教学入口：先用大白话讲“为什么影子模式不等于上线门禁、为什么 not_evaluable 反而是诚实结果、AI 产品经理怎样用数据缺口决定下一版”，再由用户在引导下完成一次 Go/No-Go 判断。未经新授权不运行 T002、不新增付费模型调用。

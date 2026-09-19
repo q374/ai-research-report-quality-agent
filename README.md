@@ -713,6 +713,29 @@ client.upload_files("thread-1", ["./report.pdf"])  # {"success": True, "files": 
 
 All dict-returning methods are validated against Gateway Pydantic response models in CI (`TestGatewayConformance`), ensuring the embedded client stays in sync with the HTTP API schemas. See `backend/packages/harness/deerflow/client.py` for full API documentation.
 
+## 证据校验影子模式（实验功能）
+
+该功能在研究型任务完成后读取已保存的 run/event，执行确定性证据规则，并把结果写入独立记录；它不改写主回答、不改变 run 成功状态，也不会为了校验再次调用模型或工具。
+
+功能默认关闭。只应在本机 `config.yaml` 中为经过批准的账号和质量配置开启；不要把真实账号 ID 提交到仓库：
+
+```yaml
+evidence_validation:
+  enabled: true
+  quality_profile_ids:
+    - evidence-research-v1
+  allowed_user_ids:
+    - <本机测试账号ID>
+```
+
+- 自动模式：仅当成功 run 的 metadata 带有允许的 `quality_profile_id` 与 `research_brief` 时，在后台生成影子记录。
+- 手动重放：对已有成功 run 重新读取持久化事实，不启动 Agent、不访问外网、不增加模型调用，也不修改原 run metadata。
+- 语义边界：普通回答若没有结构化 Claim/Evidence，记录必须显示 `semantic_evaluation=not_evaluable`，不能冒充语义校验通过。
+- 查询：`GET /api/threads/{thread_id}/runs/{run_id}/evidence-validation`。
+- 重放：`POST /api/threads/{thread_id}/runs/{run_id}/evidence-validation/replay`，仅所有者、允许账号和允许 profile 可用。
+- 持久化：Alembic revision `0003_evidence_validations` 创建独立表；`(run_id, report_hash)` 保证同一报告重放幂等。
+
+这是旁路观测能力，不是全量发布硬门禁，也不代表报告事实已经由人工确认。
 ## Documentation
 
 - [Contributing Guide](CONTRIBUTING.md) - Development environment setup and workflow
