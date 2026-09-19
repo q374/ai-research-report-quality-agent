@@ -242,3 +242,14 @@ flowchart LR
 - 本结果只证明已知样本的回归表现；尚未证明未知样本准确率，也尚未接入 DeerFlow。
 
 详细证据：`docs/product/evidence-validator-results/SUMMARY.md`。
+
+
+## 16. 阶段 B 接入评审（2026-09-19）
+
+- 源码核对确认可复用 run、message、ToolMessage、Token、artifact、引用展示和登录身份；现有点赞/点踩反馈不满足人工审批语义。
+- 接入必须区分三类数据：Agent 提供 Claim/Evidence 候选，系统计算运行事实，人工提供最终决定。
+- 建议新增独立 ValidationRecord 与 ReviewDecision；批准绑定 report_hash，报告变化后旧批准失效。
+- 界面采用回答下方状态卡与问题/证据抽屉；有 blocker 时不能确认，校验异常时 fail-closed。
+- 决策为有条件进入 B0 契约与回放，不进入全量硬门禁，不运行新付费样本。
+
+详细评审：`docs/product/STAGE_B_INTEGRATION_REVIEW.md`。

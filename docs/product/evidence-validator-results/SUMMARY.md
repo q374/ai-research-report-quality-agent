@@ -50,7 +50,7 @@ python scripts/evidence_validator.py tests/product/fixtures/t001_v3.json
 
 ## 5. 下一阶段产品决策
 
-先评审输入契约和误报风险，再决定是否进入阶段 B。阶段 B 的关键不是继续改提示词，而是让 DeerFlow 在报告出口提供结构化 Claim、EvidenceItem、运行日志和人工复核状态。未经新的范围确认，不修改 DeerFlow 前后端，也不运行 T002 或新的付费样本。
+阶段 B 接入评审已完成，结论为有条件进入 B0：先建立 ValidationRecord、ReviewDecision、report_hash、固定样本回放和静态复核界面，不直接对真实回答启用硬门禁。完整决策见 `docs/product/STAGE_B_INTEGRATION_REVIEW.md`。仍不运行 T002 或新的付费样本。
 
 ## 6. 30 分钟讲解与验收
 

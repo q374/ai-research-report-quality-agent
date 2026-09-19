@@ -165,3 +165,13 @@
 - 真实性边界：结果只覆盖三份已知合成样本；尚未验证未知样本、误报率、真实用户效率或生产稳定性。Claim、EvidenceItem 和运行日志目前由固定夹具提供，尚未从 DeerFlow 自动采集。
 - 本阶段新增模型调用 0 次，新增 API 费用 0 元。下一步先做产品评审，确认输入契约和误报风险；未经新范围确认，不接入 DeerFlow、不运行 T002 或新的付费样本。
 - 验证入口：`docs/product/evidence-validator-results/SUMMARY.md`；实现与测试入口：`scripts/evidence_validator.py`、`tests/product/test_evidence_validator.py`。
+
+
+## 2026-09-19 阶段 B 接入评审
+
+- 已核对 DeerFlow 的 ThreadState、Run API、运行事件、引用组件、前端 onFinish 和 Feedback API。现有系统可提供 run/message/tool/Token/artifact/身份基础，但没有证据校验状态和版本化人工审批。
+- 产品决策：证据研究仅作为显式质量配置，不作用于普通聊天；系统字符、工具、页面、Token 等数据必须来自运行记录，不能相信模型自报。
+- 现有点赞/点踩仅代表满意度，不复用为发布审批。建议新增 ValidationRecord 与追加式 ReviewDecision；人工批准必须绑定 report_hash、复核人和时间，报告变化后旧批准失效。
+- 复核界面采用回答下方状态卡和问题/证据抽屉；有 blocker 时不能确认，校验器异常时使用 validator_error 并 fail-closed。失败报告仍可查看，但明确标为不可发布。
+- Go/No-Go：有条件进入 B0 契约与固定样本回放；暂不进入全量前后端硬门禁、不运行 T002、不新增付费样本。B0 完成 B-01 至 B-10 且新增至少 5 个无阻断或边界对照样本后，再评估影子运行。
+- 评审文档：`docs/product/STAGE_B_INTEGRATION_REVIEW.md`。本阶段未修改 DeerFlow 前后端、未调用模型、未产生 API 费用。
