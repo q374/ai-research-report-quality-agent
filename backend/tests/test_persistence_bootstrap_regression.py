@@ -48,6 +48,7 @@ def _seed_pre_3658_database(db_path: Path) -> None:
     try:
         Base.metadata.create_all(sync_engine)
         with sync_engine.begin() as conn:
+            conn.execute(sa.text("DROP TABLE IF EXISTS evidence_validations"))
             conn.execute(sa.text("ALTER TABLE runs DROP COLUMN token_usage_by_model"))
     finally:
         sync_engine.dispose()
@@ -76,7 +77,7 @@ async def test_legacy_database_recovers_token_usage_column(tmp_path: Path) -> No
             cols = {row[1] for row in raw.execute("PRAGMA table_info(runs)").fetchall()}
             assert "token_usage_by_model" in cols
             version_row = raw.execute("SELECT version_num FROM alembic_version").fetchone()
-            assert version_row[0] == "0002_runs_token_usage"
+            assert version_row[0] == "0003_evidence_validations"
 
         # And the read path that originally 500'd must now succeed.
         sf = get_session_factory()
@@ -103,6 +104,8 @@ async def test_legacy_database_with_manual_alter_still_bootstraps(tmp_path: Path
     sync_engine = sa.create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
         Base.metadata.create_all(sync_engine)
+        with sync_engine.begin() as conn:
+            conn.execute(sa.text("DROP TABLE IF EXISTS evidence_validations"))
         # Don't strip the column -- this is the "user already ran the
         # workaround" case where create_all already produced it.
     finally:
@@ -116,6 +119,6 @@ async def test_legacy_database_with_manual_alter_still_bootstraps(tmp_path: Path
             # No duplicate column -- list, not set, to catch dupes.
             assert cols.count("token_usage_by_model") == 1
             version_row = raw.execute("SELECT version_num FROM alembic_version").fetchone()
-            assert version_row[0] == "0002_runs_token_usage"
+            assert version_row[0] == "0003_evidence_validations"
     finally:
         await close_engine()

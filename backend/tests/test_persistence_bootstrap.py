@@ -47,8 +47,12 @@ from deerflow.persistence.migrations._helpers import _normalize_default
 asyncio_test = pytest.mark.asyncio
 
 
-HEAD = "0002_runs_token_usage"
+HEAD = "0003_evidence_validations"
 BASELINE = "0001_baseline"
+
+
+def test_evidence_validations_is_not_a_baseline_table() -> None:
+    assert "evidence_validations" not in _BASELINE_TABLE_NAMES
 
 
 def _url(tmp_path: Path, name: str = "test.db") -> str:
@@ -84,6 +88,7 @@ async def _seed_legacy_without_column(engine) -> None:
     """Build the pre-#3658 schema: create_all, then drop the new column."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(sa.text("DROP TABLE IF EXISTS evidence_validations"))
     async with engine.begin() as conn:
         # SQLite supports DROP COLUMN from 3.35.0; the test runner pins recent
         # Python which bundles a 3.40+ sqlite, so this is safe.
@@ -93,6 +98,7 @@ async def _seed_legacy_without_column(engine) -> None:
 async def _seed_legacy_with_column(engine) -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(sa.text("DROP TABLE IF EXISTS evidence_validations"))
 
 
 async def _seed_legacy_missing_channel_tables(engine) -> None:
@@ -106,6 +112,7 @@ async def _seed_legacy_missing_channel_tables(engine) -> None:
     """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(sa.text("DROP TABLE IF EXISTS evidence_validations"))
     async with engine.begin() as conn:
         for table in (
             "channel_credentials",
@@ -138,6 +145,7 @@ async def test_empty_branch_creates_all_and_stamps_head(tmp_path: Path) -> None:
             "channel_conversations",
             "channel_oauth_states",
             "alembic_version",
+            "evidence_validations",
         }:
             assert required in tables, f"missing table: {required}"
         assert "token_usage_by_model" in await _runs_columns(engine)
@@ -615,7 +623,7 @@ class TestDecideState:
 # ---------------------------------------------------------------------------
 
 
-def test_head_revision_is_token_usage_revision() -> None:
+def test_head_revision_is_evidence_validations_revision() -> None:
     assert _get_head_revision() == HEAD
 
 

@@ -1,7 +1,7 @@
 """Alembic environment for DeerFlow application tables.
 
 ONLY manages DeerFlow's tables (runs, threads_meta, feedback, users,
-run_events, channel_connections, channel_credentials, channel_oauth_states,
+run_events, evidence_validations, channel_connections, channel_credentials, channel_oauth_states,
 channel_conversations).
 
 LangGraph's checkpointer tables (``checkpoints``, ``checkpoint_blobs``,

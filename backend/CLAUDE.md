@@ -723,3 +723,5 @@ See `docs/` directory for detailed documentation:
 Deterministic evidence validation lives in `packages/harness/deerflow/evaluation/`. It must stay free of network, database, and `app.*` dependencies. Root-level `scripts/evidence_validator.py` and `scripts/evidence_review_workflow.py` are compatibility wrappers only; do not add a second implementation there.
 
 Shadow execution is controlled by `EvidenceValidationConfig` in `packages/harness/deerflow/config/evidence_validation_config.py`. It is disabled by default and requires both an allowed user ID and an allowed quality-profile ID; `config.example.yaml` must keep `allowed_user_ids` empty.
+
+Persistent validation records use `EvidenceValidationRepository` and the `evidence_validations` table introduced by Alembic revision `0003_evidence_validations`. The `(run_id, report_hash)` uniqueness constraint is the idempotency boundary; legacy bootstrap fixtures must not pre-create this post-baseline table.
