@@ -60,3 +60,9 @@ python scripts/evidence_validator.py tests/product/fixtures/t001_v3.json
 4. 5 分钟：演示无阻断报告为什么仍需人工批准。
 5. 4 分钟：说明零模型成本、fail-closed 与不自动改写的取舍。
 6. 3 分钟：说明合成样本边界和阶段 B 接入决策。
+
+## 7. B0 补充结果
+
+阶段 A 之后已完成 B0：新增 5 份正向/边界夹具，与 T001 v1 至 v3 合计回放 8 份；固定样本内错误放行 0、错误阻断 0。可执行契约覆盖 report_hash、权限、人工决定、幂等和异常 fail-closed；静态界面展示四种状态。
+
+完整结果见 `B0_REPLAY_SUMMARY.md`。B0 仍未接入 DeerFlow 真实运行事件或数据库，刷新后的决定持久化、未知样本准确率和真实用户效果均未验证。

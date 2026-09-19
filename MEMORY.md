@@ -175,3 +175,12 @@
 - 复核界面采用回答下方状态卡和问题/证据抽屉；有 blocker 时不能确认，校验器异常时使用 validator_error 并 fail-closed。失败报告仍可查看，但明确标为不可发布。
 - Go/No-Go：有条件进入 B0 契约与固定样本回放；暂不进入全量前后端硬门禁、不运行 T002、不新增付费样本。B0 完成 B-01 至 B-10 且新增至少 5 个无阻断或边界对照样本后，再评估影子运行。
 - 评审文档：`docs/product/STAGE_B_INTEGRATION_REVIEW.md`。本阶段未修改 DeerFlow 前后端、未调用模型、未产生 API 费用。
+
+## 2026-09-19 独立证据校验器 B0 离线实现
+
+- 已完成 ValidationRecord / ReviewDecision 可执行契约：绑定 thread、run、message、owner 和 report_hash；覆盖权限、幂等、旧哈希失效及 validator_error fail-closed。
+- 已完成 8 份固定样本回放：T001 v1 至 v3 三份负样本全部 blocked，5 份正向/边界样本全部 review_required；固定样本内错误放行 0、错误阻断 0。
+- 已完成四状态静态复核界面，桌面浏览器逐态检查通过；blocked 与 validator_error 的确认按钮禁用。窄屏浏览器实测和截图落盘因当前 CUA 能力限制未完成；响应式规则仅完成源码检查，不能替代真实窄屏验收。
+- 完整产品测试 31 项通过；本阶段没有联网、模型调用或新增 API 费用，也没有修改 DeerFlow backend/frontend。
+- 真实性边界：所有输入仍是本地固定夹具；人工决定只在内存契约中演示，未接数据库或登录 API。B-10 的刷新持久化、真实运行事件映射、未知样本准确率、生产稳定性和真实用户价值均未验证。
+- 下一步先做 B1 影子运行设计评审，明确服务端持久化和 run/message/tool 事件映射；未获新授权前不修改真实链路、不运行新付费样本、不推送或发布。

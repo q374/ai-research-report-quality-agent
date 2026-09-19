@@ -253,3 +253,12 @@ flowchart LR
 - 决策为有条件进入 B0 契约与回放，不进入全量硬门禁，不运行新付费样本。
 
 详细评审：`docs/product/STAGE_B_INTEGRATION_REVIEW.md`。
+
+## 17. B0 实现状态（2026-09-19）
+
+- 已实现可执行的校验记录与人工决定契约；报告批准绑定 report_hash、复核人和时间。
+- 已回放 8 份固定样本：3 份已知 Badcase 全部阻断，5 份正向/边界样本均进入人工复核。
+- 已实现四状态静态复核界面；blocked 和 validator_error 不能批准。
+- 完整产品测试 31 项通过；本阶段没有联网、模型调用或新增 API 费用。
+- 尚未完成真实 DeerFlow 数据采集、服务端持久化、登录权限接口、刷新恢复和未知样本评测，因此不能称为已接入或上线。
+- 详细结果：`docs/product/evidence-validator-results/B0_REPLAY_SUMMARY.md`；界面入口：`docs/product/prototypes/evidence-review/index.html`。
