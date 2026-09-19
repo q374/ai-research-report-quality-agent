@@ -37,6 +37,22 @@ class ShadowValidationService:
         provided = self.config_provider()
         return getattr(provided, "evidence_validation", provided)
 
+    def eligibility(
+        self,
+        *,
+        user_id: str | None,
+        quality_profile_id: str | None,
+    ) -> str:
+        """返回可供 API 安全映射的灰度资格原因。"""
+        config = self._config()
+        if config is None or not getattr(config, "enabled", False):
+            return "disabled"
+        if not user_id or user_id not in getattr(config, "allowed_user_ids", []):
+            return "user_not_allowed"
+        if not quality_profile_id or quality_profile_id not in getattr(config, "quality_profile_ids", []):
+            return "profile_not_allowed"
+        return "allowed"
+
     async def process_run(
         self,
         *,
@@ -70,16 +86,13 @@ class ShadowValidationService:
             selected_profile = quality_profile_id
             selected_brief = brief
 
-        config = self._config()
-        is_allowed = bool(
-            config
-            and hasattr(config, "is_allowed")
-            and config.is_allowed(
+        if (
+            self.eligibility(
                 user_id=owner_user_id,
                 quality_profile_id=selected_profile,
             )
-        )
-        if not is_allowed:
+            != "allowed"
+        ):
             if source == "auto":
                 return None
             raise PermissionError("当前账号或质量配置未启用证据校验")

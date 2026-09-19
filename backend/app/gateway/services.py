@@ -428,6 +428,9 @@ async def start_run(
             )
         )
         record.task = task
+        dispatcher = getattr(request.app.state, "shadow_validation_dispatcher", None)
+        if dispatcher is not None:
+            dispatcher.schedule(record)
 
         # Title sync is handled by worker.py's finally block which reads the
         # title from the checkpoint and calls thread_store.update_display_name

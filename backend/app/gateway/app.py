@@ -18,6 +18,7 @@ from app.gateway.routers import (
     auth,
     channel_connections,
     channels,
+    evidence_validation,
     feedback,
     mcp,
     memory,
@@ -399,6 +400,9 @@ This gateway provides runtime endpoints for agent runs plus custom endpoints for
 
     # Feedback API is mounted at /api/threads/{thread_id}/runs/{run_id}/feedback
     app.include_router(feedback.router)
+
+    # Evidence validation shadow API is mounted beside run resources.
+    app.include_router(evidence_validation.router)
 
     # Thread Runs API (LangGraph Platform-compatible runs lifecycle)
     app.include_router(thread_runs.router)

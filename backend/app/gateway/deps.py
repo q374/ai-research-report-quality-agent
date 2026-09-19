@@ -26,6 +26,8 @@ from typing import TYPE_CHECKING, TypeVar, cast
 from fastapi import FastAPI, HTTPException, Request
 from langgraph.types import Checkpointer
 
+from app.gateway.evidence_validation.dispatcher import ShadowValidationDispatcher
+from app.gateway.evidence_validation.service import ShadowValidationService
 from deerflow.config.app_config import AppConfig, get_app_config
 from deerflow.persistence.feedback import FeedbackRepository
 from deerflow.runtime import RunContext, RunManager, StreamBridge
@@ -186,16 +188,19 @@ async def langgraph_runtime(app: FastAPI, startup_config: AppConfig) -> AsyncGen
         # Initialize repositories — one get_session_factory() call for all.
         sf = get_session_factory()
         if sf is not None:
+            from deerflow.persistence.evidence_validation import EvidenceValidationRepository
             from deerflow.persistence.feedback import FeedbackRepository
             from deerflow.persistence.run import RunRepository
 
             app.state.run_store = RunRepository(sf)
             app.state.feedback_repo = FeedbackRepository(sf)
+            app.state.evidence_validation_repo = EvidenceValidationRepository(sf)
         else:
             from deerflow.runtime.runs.store.memory import MemoryRunStore
 
             app.state.run_store = MemoryRunStore()
             app.state.feedback_repo = None
+            app.state.evidence_validation_repo = None
 
         from deerflow.persistence.thread_meta import make_thread_store
 
@@ -208,6 +213,19 @@ async def langgraph_runtime(app: FastAPI, startup_config: AppConfig) -> AsyncGen
         run_events_config = getattr(config, "run_events", None)
         app.state.run_events_config = run_events_config
         app.state.run_event_store = make_run_event_store(run_events_config)
+
+        if app.state.evidence_validation_repo is not None:
+            app.state.evidence_validation_service = ShadowValidationService(
+                app.state.run_store,
+                app.state.run_event_store,
+                app.state.evidence_validation_repo,
+                config_provider=get_config,
+            )
+            app.state.shadow_validation_dispatcher = ShadowValidationDispatcher(app.state.evidence_validation_service)
+        else:
+            # Memory persistence cannot guarantee durable, idempotent records.
+            app.state.evidence_validation_service = None
+            app.state.shadow_validation_dispatcher = None
 
         # RunManager with store backing for persistence
         app.state.run_manager = RunManager(store=app.state.run_store)
@@ -233,6 +251,9 @@ async def langgraph_runtime(app: FastAPI, startup_config: AppConfig) -> AsyncGen
             run_manager = getattr(app.state, "run_manager", None)
             if run_manager is not None:
                 await _drain_inflight_runs(run_manager)
+            dispatcher = getattr(app.state, "shadow_validation_dispatcher", None)
+            if dispatcher is not None:
+                await dispatcher.drain(timeout=_RUN_DRAIN_TIMEOUT_SECONDS)
             await close_engine()
 
 
@@ -260,6 +281,9 @@ get_checkpointer: Callable[[Request], Checkpointer] = _require("checkpointer", "
 get_run_event_store: Callable[[Request], RunEventStore] = _require("run_event_store", "Run event store")
 get_feedback_repo: Callable[[Request], FeedbackRepository] = _require("feedback_repo", "Feedback")
 get_run_store: Callable[[Request], RunStore] = _require("run_store", "Run store")
+get_evidence_validation_repo = _require("evidence_validation_repo", "Evidence validation repository")
+get_evidence_validation_service = _require("evidence_validation_service", "Evidence validation service")
+get_shadow_validation_dispatcher = _require("shadow_validation_dispatcher", "Evidence validation dispatcher")
 
 
 def get_store(request: Request):

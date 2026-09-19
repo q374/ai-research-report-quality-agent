@@ -80,11 +80,7 @@ def _sanitize_url(value: str) -> str:
     host = parts.hostname.lower()
     if parts.port:
         host = f"{host}:{parts.port}"
-    query = [
-        (key, val)
-        for key, val in parse_qsl(parts.query, keep_blank_values=True)
-        if key.lower() not in SENSITIVE_QUERY_KEYS
-    ]
+    query = [(key, val) for key, val in parse_qsl(parts.query, keep_blank_values=True) if key.lower() not in SENSITIVE_QUERY_KEYS]
     return urlunsplit(
         (
             parts.scheme.lower(),

@@ -351,3 +351,52 @@ async def test_shutdown_surfaces_failed_interrupted_persist(caplog):
             record.task.cancel()
             with suppress(asyncio.CancelledError):
                 await record.task
+
+
+@pytest.mark.asyncio
+async def test_langgraph_runtime_drains_shadow_validation_before_engine_close(monkeypatch):
+    """影子记录必须在共享数据库引擎关闭前完成或有界取消。"""
+    from fastapi import FastAPI
+
+    from app.gateway.deps import langgraph_runtime
+    from app.gateway.evidence_validation.dispatcher import ShadowValidationDispatcher
+    from deerflow.runtime import RunManager
+
+    events: list[str] = []
+
+    @asynccontextmanager
+    async def fake_context(_config):
+        yield object()
+
+    async def fake_init_engine(_db):
+        return None
+
+    async def fake_close_engine():
+        events.append("engine_closed")
+
+    async def spy_run_shutdown(self, *, timeout):  # noqa: ANN001
+        events.append("runs_drained")
+
+    async def spy_shadow_drain(self, timeout=5.0):  # noqa: ANN001
+        events.append("shadow_drained")
+
+    monkeypatch.setattr("deerflow.runtime.checkpointer.async_provider.make_checkpointer", fake_context)
+    monkeypatch.setattr("deerflow.runtime.make_stream_bridge", fake_context)
+    monkeypatch.setattr("deerflow.runtime.make_store", fake_context)
+    monkeypatch.setattr("deerflow.persistence.engine.init_engine_from_config", fake_init_engine)
+    monkeypatch.setattr("deerflow.persistence.engine.close_engine", fake_close_engine)
+    monkeypatch.setattr("deerflow.persistence.engine.get_session_factory", lambda: object())
+    monkeypatch.setattr("deerflow.runtime.events.store.make_run_event_store", lambda _cfg: object())
+    monkeypatch.setattr("deerflow.persistence.thread_meta.make_thread_store", lambda _sf, _store: object())
+    monkeypatch.setattr(RunManager, "shutdown", spy_run_shutdown, raising=False)
+    monkeypatch.setattr(ShadowValidationDispatcher, "drain", spy_shadow_drain, raising=False)
+
+    app = FastAPI()
+    startup_config = SimpleNamespace(database=SimpleNamespace(backend="postgres"), run_events=None)
+
+    async with langgraph_runtime(app, startup_config):
+        assert app.state.evidence_validation_repo is not None
+        assert app.state.evidence_validation_service is not None
+        assert app.state.shadow_validation_dispatcher is not None
+
+    assert events == ["runs_drained", "shadow_drained", "engine_closed"]
