@@ -1,0 +1,180 @@
+{
+  "manifest_version": "1.0",
+  "summary": {
+    "total": 8,
+    "blocked": 3,
+    "review_required": 5,
+    "confirmed": 0,
+    "validator_error": 0,
+    "false_releases": 0,
+    "false_blocks": 0,
+    "mismatches": 0
+  },
+  "samples": [
+    {
+      "id": "t001_v1",
+      "fixture": "t001_v1.json",
+      "expected_status": "blocked",
+      "actual_status": "blocked",
+      "expected_blockers": [
+        "EV-01",
+        "EV-03",
+        "EV-04",
+        "EV-06"
+      ],
+      "blockers": [
+        "EV-01",
+        "EV-03",
+        "EV-04",
+        "EV-06"
+      ],
+      "warnings": [
+        "EV-07"
+      ],
+      "metrics": {
+        "actual_chars": 1217,
+        "page_views": 3,
+        "unique_pages": 2,
+        "searches": 2
+      },
+      "report_hash": "5337151b52f2e5f99e80fd1b4055a5182f75ae1f07e8541399b914ae35a4d209",
+      "matches_expected": true
+    },
+    {
+      "id": "t001_v2",
+      "fixture": "t001_v2.json",
+      "expected_status": "blocked",
+      "actual_status": "blocked",
+      "expected_blockers": [
+        "EV-04",
+        "EV-08"
+      ],
+      "blockers": [
+        "EV-04",
+        "EV-08"
+      ],
+      "warnings": [],
+      "metrics": {
+        "actual_chars": 575,
+        "page_views": 3,
+        "unique_pages": 3,
+        "searches": 2
+      },
+      "report_hash": "20bb190617e313b5f54b7a98f5d7e7fda3cf7463150a84064799a0c7e0aacf6e",
+      "matches_expected": true
+    },
+    {
+      "id": "t001_v3",
+      "fixture": "t001_v3.json",
+      "expected_status": "blocked",
+      "actual_status": "blocked",
+      "expected_blockers": [
+        "EV-03",
+        "EV-06"
+      ],
+      "blockers": [
+        "EV-03",
+        "EV-06"
+      ],
+      "warnings": [
+        "EV-06",
+        "EV-07"
+      ],
+      "metrics": {
+        "actual_chars": 877,
+        "page_views": 4,
+        "unique_pages": 2,
+        "searches": 2
+      },
+      "report_hash": "fae39abb2aa61564950cd94af9fb68161e0e949c8e5913537018e1a58a422bed",
+      "matches_expected": true
+    },
+    {
+      "id": "b0_clean_current",
+      "fixture": "b0_clean_current.json",
+      "expected_status": "review_required",
+      "actual_status": "review_required",
+      "expected_blockers": [],
+      "blockers": [],
+      "warnings": [],
+      "metrics": {
+        "actual_chars": 91,
+        "page_views": 2,
+        "unique_pages": 2,
+        "searches": 1
+      },
+      "report_hash": "67fa2403c4de7c7acfe199dfd0c633b8ff0a890bc9ee8df523762975b4224215",
+      "matches_expected": true
+    },
+    {
+      "id": "b0_clean_historical",
+      "fixture": "b0_clean_historical.json",
+      "expected_status": "review_required",
+      "actual_status": "review_required",
+      "expected_blockers": [],
+      "blockers": [],
+      "warnings": [],
+      "metrics": {
+        "actual_chars": 92,
+        "page_views": 2,
+        "unique_pages": 2,
+        "searches": 1
+      },
+      "report_hash": "a34152a91e4fd4149c0e18165028267d7beada2230164bf8000960f444a7b3c4",
+      "matches_expected": true
+    },
+    {
+      "id": "b0_exact_limit",
+      "fixture": "b0_exact_limit.json",
+      "expected_status": "review_required",
+      "actual_status": "review_required",
+      "expected_blockers": [],
+      "blockers": [],
+      "warnings": [],
+      "metrics": {
+        "actual_chars": 800,
+        "page_views": 2,
+        "unique_pages": 2,
+        "searches": 1
+      },
+      "report_hash": "3e2c8b1e12aeef53f209c4ebe6f02c86ffa93d8b06e75d9fd06a3062e5c4ae32",
+      "matches_expected": true
+    },
+    {
+      "id": "b0_duplicate_urls",
+      "fixture": "b0_duplicate_urls.json",
+      "expected_status": "review_required",
+      "actual_status": "review_required",
+      "expected_blockers": [],
+      "blockers": [],
+      "warnings": [
+        "EV-07"
+      ],
+      "metrics": {
+        "actual_chars": 91,
+        "page_views": 2,
+        "unique_pages": 1,
+        "searches": 1
+      },
+      "report_hash": "f44229ee6714019401b2c7cce89e615d63d8a75a5798f20baea5cbe2c3eccd6f",
+      "matches_expected": true
+    },
+    {
+      "id": "b0_neutral_review",
+      "fixture": "b0_neutral_review.json",
+      "expected_status": "review_required",
+      "actual_status": "review_required",
+      "expected_blockers": [],
+      "blockers": [],
+      "warnings": [],
+      "metrics": {
+        "actual_chars": 112,
+        "page_views": 2,
+        "unique_pages": 2,
+        "searches": 1
+      },
+      "report_hash": "51f80546ec23e9a41fa4e4f85ec1149f016b8b11ac2a2163737e38a7900ada23",
+      "matches_expected": true
+    }
+  ]
+}

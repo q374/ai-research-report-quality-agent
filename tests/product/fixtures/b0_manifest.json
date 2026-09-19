@@ -1,0 +1,64 @@
+{
+  "manifest_version": "1.0",
+  "samples": [
+    {
+      "id": "t001_v1",
+      "fixture": "t001_v1.json",
+      "expected_status": "blocked",
+      "expected_blockers": [
+        "EV-01",
+        "EV-03",
+        "EV-04",
+        "EV-06"
+      ]
+    },
+    {
+      "id": "t001_v2",
+      "fixture": "t001_v2.json",
+      "expected_status": "blocked",
+      "expected_blockers": [
+        "EV-04",
+        "EV-08"
+      ]
+    },
+    {
+      "id": "t001_v3",
+      "fixture": "t001_v3.json",
+      "expected_status": "blocked",
+      "expected_blockers": [
+        "EV-03",
+        "EV-06"
+      ]
+    },
+    {
+      "id": "b0_clean_current",
+      "fixture": "b0_clean_current.json",
+      "expected_status": "review_required",
+      "expected_blockers": []
+    },
+    {
+      "id": "b0_clean_historical",
+      "fixture": "b0_clean_historical.json",
+      "expected_status": "review_required",
+      "expected_blockers": []
+    },
+    {
+      "id": "b0_exact_limit",
+      "fixture": "b0_exact_limit.json",
+      "expected_status": "review_required",
+      "expected_blockers": []
+    },
+    {
+      "id": "b0_duplicate_urls",
+      "fixture": "b0_duplicate_urls.json",
+      "expected_status": "review_required",
+      "expected_blockers": []
+    },
+    {
+      "id": "b0_neutral_review",
+      "fixture": "b0_neutral_review.json",
+      "expected_status": "review_required",
+      "expected_blockers": []
+    }
+  ]
+}
