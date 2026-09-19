@@ -79,7 +79,7 @@ B0 的确定性规则提升为 `deerflow.evaluation.evidence_validator` 下的�
 
 影子处理失败只能写日志或 `validator_error` 记录，不能修改 run 状态、SSE 结果或最终回答。
 
-为验证已有 run 和修复漏处理，增加一个受所有者权限保护的幂等重放入口。它只读取已有数据库记录并运行确定性校验，不调用模型或工具。
+为验证已有 run 和修复漏处理，增加一个受所有者权限保护的幂等重放入口。自动回调仍要求 run metadata 含指定质量配置；手动重放则由允许账号显式提交 `quality_profile_id` 和 ResearchBrief，作为本次重放的受控输入，不修改原 run metadata。它只读取已有数据库记录并运行确定性校验，不调用模型或工具。
 
 ### 6.4 数据来源
 
@@ -144,7 +144,7 @@ B0 的确定性规则提升为 `deerflow.evaluation.evidence_validator` 下的�
 
 - 非所有者返回 404，避免泄露 run 是否存在。
 - run 必须属于路径中的 thread。
-- 重放仍需满足服务端账号与质量配置允许条件。
+- 重放必须由允许账号发起，且请求中的 `quality_profile_id` 必须在服务端允许列表中。
 - 返回内容不得包含密钥、内部异常堆栈或完整未截断的敏感工具参数。
 
 ## 9. 接口
@@ -159,12 +159,13 @@ B0 的确定性规则提升为 `deerflow.evaluation.evidence_validator` 下的�
 
 ### 幂等重放
 
-`POST /api/threads/{thread_id}/runs/{run_id}/evidence-validation/replay`
+`POST /api/threads/{thread_id}/runs/{run_id}/evidence-validation/replay`，请求体包含 `quality_profile_id` 与 ResearchBrief。
 
 - 只处理已有 run 和 event。
 - 不启动 Agent、不调用模型、不访问外网。
 - 相同 report_hash 返回同一记录。
 - 不符合账号或质量配置时返回明确的 409/403，不静默启用。
+- 手动重放不修改原 run metadata；记录保存本次请求的质量配置和 Brief 来源为 manual_replay。
 
 ## 10. 异常处理
 

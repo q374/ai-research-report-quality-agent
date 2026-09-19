@@ -9,7 +9,7 @@
 - 本目录新增 AGENTS.md、MEMORY.md 为项目规则与状态，不是产品功能。
 - 运行入口：Install.md、Makefile、scripts/docker.sh、docker/docker-compose-dev.yaml。backend/frontend 子目录规则按需读取。
 - 当前运行：Docker 上的 frontend、gateway、nginx 健康；Dify 容器保持停止，避免同时占用内存。DeepSeek Flash 已完成基础对话和 T001 联网评测。
-- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。独立证据校验器 v1.0 产品设计与人工离线走查已完成，程序实现尚未开始；暂停追加付费回归与 T002。
+- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。独立证据校验器已完成阶段 A 与 B0 离线实现，31 项产品测试通过；B1 影子接入仅完成设计和实施计划，尚未写入 backend 或真实链路。暂停追加付费回归与 T002。
 - 产品规格与评测证据见 `docs/product/PRODUCT_OPPORTUNITY.md` 和 `docs/product/DEERFLOW_EVALUATION_SCORECARD.xlsx`；始终保留合成数据、真实 API、人工复核和生产发布之间的真实性边界。
 
 ## 模型输入准备
@@ -184,3 +184,10 @@
 - 完整产品测试 31 项通过；本阶段没有联网、模型调用或新增 API 费用，也没有修改 DeerFlow backend/frontend。
 - 真实性边界：所有输入仍是本地固定夹具；人工决定只在内存契约中演示，未接数据库或登录 API。B-10 的刷新持久化、真实运行事件映射、未知样本准确率、生产稳定性和真实用户价值均未验证。
 - 下一步先做 B1 影子运行设计评审，明确服务端持久化和 run/message/tool 事件映射；未获新授权前不修改真实链路、不运行新付费样本、不推送或发布。
+## 2026-09-19 B1 影子校验设计与实施计划
+
+- 已完成设计规格 `docs/superpowers/specs/2026-09-19-evidence-validation-shadow-mode-design.md` 和实施计划 `docs/superpowers/plans/2026-09-19-evidence-validation-shadow-mode.md`；当前仍是设计与计划，不代表功能已实现。
+- 方案只面向允许的测试账号与 `evidence-research-v1`：原回答照常显示，后台读取真实 run/event 事实做确定性校验，结果写入新表；异常不得改写原 run。
+- 自动回调要求 run metadata 含质量配置；已有 run 可由允许账号显式提交质量配置与 ResearchBrief 做手动零费用重放，且不修改原 run metadata、不调用模型。
+- 缺少结构化 Claim/Evidence 必须标为 `not_evaluable`；自动流程不能产生人工确认。查询和重放都要求所有者权限，跨用户统一 404。
+- 计划已补齐并发幂等、异常脱敏、数据库迁移、重启持久化、backend 全量测试与旧 run 零新增模型调用验收。下一步等待用户确认按当前任务串行执行；确认前不修改 backend。
