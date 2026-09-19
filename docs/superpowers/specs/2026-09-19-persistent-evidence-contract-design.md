@@ -107,11 +107,13 @@ Deep Research 会执行多步骤网页研究。[citation:来源1](https://exampl
 
 可见引用与 Evidence 的关系由 Claim 的 `citation_evidence_ids` 和 `rendered_text` 中的实际链接共同表达，不再增加一份重复映射。
 
-工具必须使用直接结束语义：提交后不能再为了生成最终正文进行一次模型调用。若底层框架无法可靠保证，实施必须停在设计复核，不得静默改成额外模型调用。
+工具必须使用直接结束语义：提交后不能再为了生成最终正文进行一次模型调用。实测 LangChain 1.2.15 中，`return_direct=True` 的工具若直接用 `Command` 追加 `AIMessage`，会因为最后一条 AI 消息没有 tool calls 而重新路由到模型；单独增加 `goto=END` 也不能避免第二次调用。
+
+因此采用已验证的确定性收尾方式：`submit_evidence_report` 校验并记录结构化事件后只返回配对 `ToolMessage`，让 `return_direct` 正常结束模型循环；专用 `after_agent` 中间件随后从系统生成的工具 artifact 中复制同一份已脱敏正文，追加最终 `AIMessage`。该中间件不调用模型、不改写报告内容，必须与工具一起只对证据质量配置注入。假模型集成测试必须证明模型调用数为 1，且最终消息顺序为 `[tool, ai]`。
 
 结构化事件与最终可见文本必须共享同一 run 和最终消息标识，避免质检到错误版本。
 
-系统为提交结果添加 `schema_version=2.0`，并持久化为 `event_type=evidence.report.submitted` 的专用事件。事件必须包含 `message_id`，同时保存一条用户可见的最终 AI 消息；不能只留下工具结果而让聊天恢复后丢失最终报告。
+系统为提交结果添加 `schema_version=2.0`，并持久化为 `event_type=evidence.report.submitted` 的专用事件。事件必须包含 `message_id`；确定性收尾中间件追加的 AI 消息必须使用同一 `message_id`，同时进入 checkpoint 与运行事件，不能只留下工具结果而让聊天恢复后丢失最终报告。
 
 ### 7.3 Claim 候选
 

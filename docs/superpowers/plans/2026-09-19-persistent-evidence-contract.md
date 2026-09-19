@@ -4,7 +4,7 @@
 
 **Goal:** 让证据研究 run 跨重启保存真实工具事件，并在同一研究运行中提交可点击、可定位的 Claim/Evidence 候选，供 B1 影子校验器做确定性核对。
 
-**Architecture:** 复用现有 SQL `run_events` 与 B1 `evidence_validations`，不新建事件数据库。只有通过账号/profile/ResearchBrief 三重资格检查的 run 才获得 `submit_evidence_report` 直接结束工具；工具在一次最终模型响应中提交 Markdown、Claim 和 Evidence，RunJournal 持久化专用事件，采集器再用真实工具事件补全采集状态并调用兼容旧夹具的确定性校验器。
+**Architecture:** 复用现有 SQL `run_events` 与 B1 `evidence_validations`，不新建事件数据库。只有通过账号/profile/ResearchBrief 三重资格检查的 run 才同时获得 `submit_evidence_report` 直接结束工具与确定性收尾中间件；工具在一次最终模型响应中提交 Markdown、Claim 和 Evidence，只返回 ToolMessage 以结束模型循环，中间件不调用模型地补写同正文 AIMessage。RunJournal 持久化专用事件，采集器再用真实工具事件补全采集状态并调用兼容旧夹具的确定性校验器。
 
 **Tech Stack:** Python 3.12、FastAPI、Pydantic、LangChain/LangGraph、SQLAlchemy/SQLite、pytest、Ruff、Next.js/React、Rstest、Playwright。
 
@@ -26,7 +26,7 @@
 
 ## Review Focus
 
-1. `return_direct` 只产生 ToolMessage、前端没有最终 AI 气泡，或工具后又发生一次模型调用——Task 2 用真实 `create_agent` + 假模型钉住最终消息与调用次数。
+1. `return_direct` 只产生 ToolMessage、前端没有最终 AI 气泡，或工具后又发生一次模型调用——Task 2 用真实 `create_agent` + 假模型钉住“工具结束循环、after_agent 补写最终 AIMessage”与调用次数。
 2. 客户端伪造 metadata 后，未允许用户或缺少 ResearchBrief 仍获得工具——Task 3 覆盖账号、profile、brief 和普通聊天四种拒绝路径。
 3. Evidence URL 或 Markdown 引用携带 token/userinfo 并被原样持久化——Task 1 覆盖 URL 与可见 Markdown 双重脱敏，Task 5 再覆盖事件采集。
 4. 同一 run 出现多个、格式错误或 message_id 不匹配的结构化事件——Task 5 明确选择规则并产生 data gap，不静默猜测。
@@ -150,41 +150,42 @@ git commit -m "feat: define evidence submission contract"
 
 **Files:**
 - Create: `backend/packages/harness/deerflow/tools/builtins/submit_evidence_report_tool.py`
+- Create: `backend/packages/harness/deerflow/agents/middlewares/evidence_report_finalizer_middleware.py`
 - Modify: `backend/packages/harness/deerflow/tools/builtins/__init__.py`
 - Modify: `backend/packages/harness/deerflow/runtime/journal.py`
 - Test: `backend/tests/test_submit_evidence_report_tool.py`
+- Test: `backend/tests/test_evidence_report_finalizer_middleware.py`
 - Test: `backend/tests/test_run_journal.py`
 
 **Interfaces:**
 - Produces: `submit_evidence_report_tool`，工具名 `submit_evidence_report`，`return_direct=True`。
-- Produces: `RunJournal.record_evidence_report(payload: dict, *, message_id: str) -> None`。
-- Command 更新必须依次包含配对 ToolMessage 和带正文的 AIMessage；AIMessage.id 与 evidence event 的 `message_id` 一致。
+- Produces: `EvidenceReportFinalizerMiddleware`，只把系统生成的提交工具 artifact 确定性转换为最终 `AIMessage`。
+- Produces: `RunJournal.record_evidence_report(payload: dict, *, message_id: str) -> None` 与 `record_final_ai_message(message: AIMessage) -> None`。
+- 工具只返回配对 ToolMessage；中间件追加带正文的 AIMessage，且 AIMessage.id 与 evidence event 的 `message_id` 一致。
 
 - [ ] **Step 1: 写工具失败测试**
 
 ```python
-def test_submit_tool_returns_visible_ai_message_and_records_event():
+def test_submit_tool_returns_terminal_tool_message_and_records_event():
     journal = Mock()
     runtime = SimpleNamespace(context={"__run_journal": journal}, state={}, config={})
-    command = submit_evidence_report_tool.func(
+    tool_message = submit_evidence_report_tool.func(
         runtime=runtime,
         tool_call_id="tc-1",
         rendered_text="结论。[citation:来源1](https://example.com/doc)",
         claims=[make_claim("C1")],
         evidence=[make_evidence("E1")],
     )
-    tool_message, ai_message = command.update["messages"]
     assert isinstance(tool_message, ToolMessage)
-    assert isinstance(ai_message, AIMessage)
-    assert ai_message.content.startswith("结论")
+    assert tool_message.artifact["rendered_text"].startswith("结论")
     journal.record_evidence_report.assert_called_once()
 ```
 
-同时增加：journal 缺失时仍返回正文；非法提交不写事件；`RunJournal.on_tool_end(Command)` 把 AIMessage 记为 `ai_message` 而不是 `llm.tool.result`。
+同时增加：journal 缺失时 artifact 仍保留正文；非法提交不写事件；中间件只处理 `submit_evidence_report` 的系统 artifact，并把最终 AIMessage 记为 `ai_message`。
 
 - [ ] **Step 2: 写零额外模型响应的假模型集成测试**
 
-用 `_agent_e2e_helpers.FakeToolCallingModel` 或等价 fake model 返回一次 `AIMessage(tool_calls=[submit_evidence_report...])`；通过真实 `langchain.agents.create_agent` 调用工具。断言：
+用 `_agent_e2e_helpers.FakeToolCallingModel` 或等价 fake model 返回一次 `AIMessage(tool_calls=[submit_evidence_report...])`；通过真实 `langchain.agents.create_agent` 同时装载工具与 `EvidenceReportFinalizerMiddleware`。断言：
 
 ```python
 assert model.invocation_count == 1
@@ -193,7 +194,7 @@ assert result["messages"][-1].content == rendered_text
 assert [m.type for m in result["messages"][-2:]] == ["tool", "ai"]
 ```
 
-若当前 LangChain 的 `return_direct + Command` 不能满足这四项，停止 Task 2 并回到规格评审；禁止静默增加第二次模型调用或仅返回 ToolMessage。
+已确认 LangChain 1.2.15 的 `return_direct + Command([ToolMessage, AIMessage])` 会调用模型 2 次，`goto=END` 也无效；不得恢复该失败方案。修正版只有在工具返回 ToolMessage、收尾中间件追加 AIMessage 且上述四项全部满足时才能通过。
 
 - [ ] **Step 3: 实现工具和 journal 公共记录方法**
 
@@ -208,7 +209,7 @@ self._put(
 )
 ```
 
-记录失败只写脱敏 debug 日志，不阻断可见回答；缺少事件会在采集阶段变成 data gap。
+ToolMessage 的 artifact 只包含脱敏后的 `rendered_text` 与 `message_id`，由收尾中间件消费。记录失败只写脱敏 debug 日志，不阻断可见回答；缺少事件会在采集阶段变成 data gap。中间件必须实现同步和异步收尾，并通过 RunJournal 显式记录最终 AI 消息。
 
 - [ ] **Step 4: 运行工具、journal 和相邻回归**
 
@@ -217,8 +218,8 @@ Run:
 ```powershell
 cd backend
 $env:PYTHONPATH='.'
-uv run pytest tests/test_submit_evidence_report_tool.py tests/test_run_journal.py tests/test_tool_args_schema_no_pydantic_warning.py -v
-uv run ruff check packages/harness/deerflow/tools/builtins/submit_evidence_report_tool.py packages/harness/deerflow/runtime/journal.py tests/test_submit_evidence_report_tool.py
+uv run pytest tests/test_submit_evidence_report_tool.py tests/test_evidence_report_finalizer_middleware.py tests/test_run_journal.py tests/test_tool_args_schema_no_pydantic_warning.py -v
+uv run ruff check packages/harness/deerflow/tools/builtins/submit_evidence_report_tool.py packages/harness/deerflow/agents/middlewares/evidence_report_finalizer_middleware.py packages/harness/deerflow/runtime/journal.py tests/test_submit_evidence_report_tool.py tests/test_evidence_report_finalizer_middleware.py
 ```
 
 Expected: PASS，fake model 调用数为 1。
@@ -226,7 +227,7 @@ Expected: PASS，fake model 调用数为 1。
 - [ ] **Step 5: 提交**
 
 ```powershell
-git add backend/packages/harness/deerflow/tools/builtins/submit_evidence_report_tool.py backend/packages/harness/deerflow/tools/builtins/__init__.py backend/packages/harness/deerflow/runtime/journal.py backend/tests/test_submit_evidence_report_tool.py backend/tests/test_run_journal.py
+git add backend/packages/harness/deerflow/tools/builtins/submit_evidence_report_tool.py backend/packages/harness/deerflow/agents/middlewares/evidence_report_finalizer_middleware.py backend/packages/harness/deerflow/tools/builtins/__init__.py backend/packages/harness/deerflow/runtime/journal.py backend/tests/test_submit_evidence_report_tool.py backend/tests/test_evidence_report_finalizer_middleware.py backend/tests/test_run_journal.py
 git commit -m "feat: add direct evidence report finalizer"
 ```
 
@@ -244,6 +245,7 @@ git commit -m "feat: add direct evidence report finalizer"
 - Produces: `resolve_evidence_profile(config: RunnableConfig, app_config: AppConfig) -> EvidenceProfileContext | None`。`ResearchBrief` 必须含 `task_id`、`required_dimensions`、`allowed_domains`、`time_scope`、`max_searches`、`max_pages`、`max_chars`、`forbidden_tools`。
 - Consumes: `config.context.user_id`、`config.metadata.quality_profile_id`、`config.metadata.research_brief`。
 - Produces: profile 专用 Prompt 后缀，要求最终只调用一次 `submit_evidence_report`，引用格式为 `[citation:来源N](URL)`。
+- Consumes: `EvidenceReportFinalizerMiddleware`，必须与 finalizer 工具成对注入，任一资格不满足时两者都不存在。
 
 - [ ] **Step 1: 写资格矩阵失败测试**
 
@@ -269,7 +271,7 @@ Expected: 新测试 FAIL。
 
 - [ ] **Step 3: 实现资格解析和 profile 专用注入**
 
-`resolve_evidence_profile` 必须调用现有 `EvidenceValidationConfig.is_allowed()`；ResearchBrief 必须是 mapping 且完整包含上述 8 个字段，列表/整数类型沿用现有 API 契约；不复制用户 ID 到 Prompt。`submit_evidence_report_tool` 在工具策略过滤完成后作为内部 finalizer 注入，不能进入 deferred tool catalog。
+`resolve_evidence_profile` 必须调用现有 `EvidenceValidationConfig.is_allowed()`；ResearchBrief 必须是 mapping 且完整包含上述 8 个字段，列表/整数类型沿用现有 API 契约；不复制用户 ID 到 Prompt。`submit_evidence_report_tool` 在工具策略过滤完成后作为内部 finalizer 注入，不能进入 deferred tool catalog；`EvidenceReportFinalizerMiddleware` 与它使用同一资格判断成对注入。
 
 Prompt 明确：
 
