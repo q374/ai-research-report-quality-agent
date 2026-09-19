@@ -83,11 +83,13 @@ def build_validation_record(
     report_hash = _report_hash(source_payload)
     try:
         validation_result = validator_func(source_payload)
+        if not isinstance(validation_result, dict):
+            raise TypeError("校验器必须返回字典")
     except Exception:
         validation_result = _validator_error_result(source_payload)
 
     auto_status = validation_result.get("status", "validator_error")
-    if auto_status not in {"blocked", "review_required", "confirmed", "rejected", "validator_error"}:
+    if auto_status not in {"blocked", "review_required"}:
         auto_status = "validator_error"
         validation_result = _validator_error_result(source_payload)
 
@@ -153,8 +155,11 @@ def submit_review(
             raise ValueError("同一幂等键不能用于不同的人工决定")
         return copy.deepcopy(record)
 
-    if decision == "approved" and record.get("auto_status") != "review_required":
-        raise ValueError("只有无阻断且待复核的报告可以批准")
+    if existing_decisions:
+        raise ValueError("当前报告版本已有人工决定，请重新校验后再提交")
+
+    if decision == "approved" and record.get("final_status") != "review_required":
+        raise ValueError("只有无阻断且仍处于待复核状态的报告可以批准")
 
     decision_id = hashlib.sha256(
         f"{record.get('validation_id')}:{idempotency_key}".encode("utf-8")

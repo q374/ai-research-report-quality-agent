@@ -112,6 +112,37 @@ class EvidenceReviewWorkflowTests(unittest.TestCase):
         self.assertEqual("EV-10", record["validation_result"]["findings"][0]["rule_id"])
         self.assertNotIn("simulated validator outage", json.dumps(record, ensure_ascii=False))
 
+    def test_invalid_validator_response_fails_closed(self):
+        record = build_validation_record(
+            clean_payload(),
+            thread_id="thread-1",
+            run_id="run-1",
+            message_id="message-1",
+            owner_user_id="user-1",
+            validator_func=lambda _payload: None,
+            now="2026-09-19T10:00:00+08:00",
+        )
+
+        self.assertEqual("validator_error", record["auto_status"])
+        self.assertEqual("EV-10", record["validation_result"]["findings"][0]["rule_id"])
+
+    def test_validator_cannot_self_confirm_a_report(self):
+        def unsafe_validator(_payload):
+            return {"status": "confirmed", "findings": [], "metrics": {}}
+
+        record = build_validation_record(
+            clean_payload(),
+            thread_id="thread-1",
+            run_id="run-1",
+            message_id="message-1",
+            owner_user_id="user-1",
+            validator_func=unsafe_validator,
+            now="2026-09-19T10:00:00+08:00",
+        )
+
+        self.assertEqual("validator_error", record["auto_status"])
+        self.assertEqual("validator_error", record["final_status"])
+
     def test_non_owner_cannot_review(self):
         record = build_clean_record()
 
@@ -180,6 +211,50 @@ class EvidenceReviewWorkflowTests(unittest.TestCase):
         self.assertEqual(record["report_hash"], decision["report_hash"])
         self.assertEqual("2026-09-19T10:03:00+08:00", decision["created_at"])
         self.assertEqual([], record["review_decisions"])
+
+    def test_confirmed_report_rejects_a_second_manual_decision(self):
+        record = build_clean_record()
+        confirmed = submit_review(
+            record,
+            actor_user_id="user-1",
+            decision="approved",
+            expected_report_hash=record["report_hash"],
+            idempotency_key="review-first",
+            now="2026-09-19T10:03:00+08:00",
+        )
+
+        with self.assertRaises(ValueError):
+            submit_review(
+                confirmed,
+                actor_user_id="user-1",
+                decision="returned",
+                reason="不能覆盖已确认决定",
+                expected_report_hash=confirmed["report_hash"],
+                idempotency_key="review-second",
+                now="2026-09-19T10:04:00+08:00",
+            )
+
+    def test_returned_record_requires_refresh_before_approval(self):
+        record = build_clean_record()
+        returned = submit_review(
+            record,
+            actor_user_id="user-1",
+            decision="returned",
+            reason="补齐证据后重新校验",
+            expected_report_hash=record["report_hash"],
+            idempotency_key="review-return",
+            now="2026-09-19T10:03:00+08:00",
+        )
+
+        with self.assertRaises(ValueError):
+            submit_review(
+                returned,
+                actor_user_id="user-1",
+                decision="approved",
+                expected_report_hash=returned["report_hash"],
+                idempotency_key="review-approve-without-refresh",
+                now="2026-09-19T10:04:00+08:00",
+            )
 
     def test_stale_hash_is_rejected(self):
         record = build_clean_record()
