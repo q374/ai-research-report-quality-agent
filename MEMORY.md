@@ -2,7 +2,7 @@
 
 更新时间：2026-09-19
 
-- 当前目标：DeerFlow 原版与 DeepSeek 已跑通；B1 证据校验影子链路已完成本地验收，下一步从 AI 产品经理视角学习验收结果并决定是否先补持久化事件与结构化 Claim/Evidence。
+- 当前目标：DeerFlow 原版、DeepSeek 与 B1 影子校验已跑通；B1.1 持久化事件与结构化 Claim/Evidence 的正式设计已起草，等待用户复核书面规格后再制定实施计划。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
 - 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
@@ -202,3 +202,11 @@
 - 验证：B1 专项 35 passed；持久化和边界 49 passed；产品测试 31 passed；B0 8 样本零不一致；Ruff、compileall、diff-check 通过。后端全量为 4,746 passed、79 failed、21 skipped，不是全绿；失败为既有 Windows 差异及隔离可复现的 Windows 时间戳/顺序问题，B1 专项无失败。
 - 当前 Docker 的 frontend、gateway、nginx 健康，Dify 运行容器 0。详细验收见 `docs/product/evidence-validator-results/B1_SHADOW_ACCEPTANCE.md`。
 - 下一步教学入口：先用大白话讲“为什么影子模式不等于上线门禁、为什么 not_evaluable 反而是诚实结果、AI 产品经理怎样用数据缺口决定下一版”，再由用户在引导下完成一次 Go/No-Go 判断。未经新授权不运行 T002、不新增付费模型调用。
+## 2026-09-19 B1.1 持久化证据与结构化结论设计
+
+- 用户确认采用“同一次研究提交结构化证据”的方案：用户可见报告保留正常 Markdown，重要结论旁使用 DeerFlow 已支持的可点击“来源 N”标签；后台保存 Claim/Evidence 候选关系，不使用第二个评分模型。
+- 系统事实、Agent 候选与人工决定分层：系统记录访问、工具、Token 和延迟；Agent 只能提出支持关系；B1.1 不实现人工 confirmed 写接口。
+- 运行事件复用现有 DbRunEventStore/run_events 表；证据模式要求重启后可读取。若仍使用 memory，主回答继续，但质检必须记录 non_persistent_event_store，不能冒充完成持久化验收。
+- 结构化结束契约名为 submit_evidence_report；必须直接结束并用测试证明其后没有为了质检新增模型调用。普通聊天、未允许账号和未启用 profile 的 run 保持原样。
+- 用户明确决定暂不设置 Claim、Evidence、摘录或 Token 的产品硬上限；先在免费离线与零费用集成测试通过后，另行授权一个真实付费样本，记录 Token、调用、延迟、费用和结构体积，再决定阈值。不得据此自动运行 T002 或批量样本。
+- 正式规格：docs/superpowers/specs/2026-09-19-persistent-evidence-contract-design.md。当前只是设计，不代表已实现；本阶段没有模型调用或 API 费用。下一步等待用户书面规格复核，确认后才能进入实施计划。
