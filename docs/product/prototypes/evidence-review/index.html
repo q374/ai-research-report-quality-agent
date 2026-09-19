@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>证据复核工作台｜B0 静态原型</title>
+  <style>
+    :root { color-scheme: light; --bg:#f5f7fa; --surface:#fff; --text:#172033; --muted:#667085; --line:#dfe4ea; --brand:#2958d6; --danger:#b42318; --danger-bg:#fff1f0; --warning:#8a4b08; --warning-bg:#fff8e8; --success:#157f3b; --success-bg:#eefbf3; --shadow:0 14px 40px rgba(23,32,51,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","Microsoft YaHei",sans-serif; font-size:14px; line-height:1.55; }
+    button, textarea { font:inherit; }
+    .shell { width:min(1500px, calc(100% - 40px)); margin:0 auto; padding:32px 0 48px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:22px; }
+    .page-header h1 { margin:0 0 6px; font-size:28px; letter-spacing:-.03em; }
+    .page-header p { margin:0; color:var(--muted); }
+    .prototype-note { max-width:360px; padding:10px 14px; border:1px solid #cfd7e6; border-radius:10px; background:#fff; color:#475467; }
+    .tabs { display:flex; gap:8px; overflow:auto; margin-bottom:14px; padding-bottom:2px; }
+    .case-tab { flex:0 0 auto; border:1px solid var(--line); border-radius:9px; background:#fff; color:#475467; padding:9px 13px; cursor:pointer; }
+    .case-tab.is-active { border-color:var(--brand); background:#eef3ff; color:#173f9f; font-weight:600; }
+    .status-card { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:22px 24px; border:1px solid var(--line); border-left-width:5px; border-radius:14px; background:var(--surface); box-shadow:var(--shadow); }
+    .status-danger { border-left-color:var(--danger); background:linear-gradient(90deg,var(--danger-bg),#fff 32%); }
+    .status-warning { border-left-color:#d97706; background:linear-gradient(90deg,var(--warning-bg),#fff 32%); }
+    .status-success { border-left-color:var(--success); background:linear-gradient(90deg,var(--success-bg),#fff 32%); }
+    .status-neutral { border-left-color:#667085; }
+    .case-label { margin:0 0 2px; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+    .status-card h2 { margin:0; font-size:22px; }
+    .status-subtitle { margin:3px 0 0; color:var(--muted); }
+    .metrics { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .metrics span { padding:8px 10px; border:1px solid rgba(102,112,133,.2); border-radius:8px; background:rgba(255,255,255,.7); color:#475467; }
+    .review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px; }
+    .panel { min-height:320px; border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:0 8px 28px rgba(23,32,51,.05); overflow:hidden; }
+    .panel h3 { margin:0; padding:15px 18px; border-bottom:1px solid var(--line); font-size:15px; }
+    .panel-scroll { max-height:380px; overflow:auto; padding:14px; }
+    .evidence-row { padding:12px; border:1px solid #e6e9ee; border-radius:10px; background:#fbfcfe; }
+    .evidence-row + .evidence-row { margin-top:9px; }
+    .evidence-row div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .evidence-row p, .evidence-row blockquote { margin:8px 0 0; }
+    .evidence-row blockquote { padding-left:10px; border-left:3px solid #cdd6ea; color:#475467; }
+    .evidence-row a { display:block; margin-top:8px; color:var(--brand); overflow-wrap:anywhere; }
+    .mono { font-family:Consolas,monospace; font-size:12px; color:#475467; }
+    .dimension, .evidence-status { padding:2px 7px; border-radius:999px; background:#eef2f6; color:#475467; font-size:11px; }
+    .finding { padding:12px; border-radius:10px; border:1px solid #e4e7ec; }
+    .finding + .finding { margin-top:9px; }
+    .finding div { display:flex; justify-content:space-between; gap:10px; }
+    .finding p { margin:6px 0 0; }
+    .finding-blocker { border-color:#f4c7c3; background:var(--danger-bg); }
+    .finding-warning { border-color:#f4d89c; background:var(--warning-bg); }
+    .action-copy { color:var(--muted); }
+    .empty { margin:0; padding:18px; color:var(--muted); text-align:center; }
+    .success-empty { border:1px dashed #a7d8b8; border-radius:10px; background:var(--success-bg); color:var(--success); }
+    .actions-panel { padding-bottom:16px; }
+    .actions-panel > p, .actions-panel > label, .actions-panel > textarea, .actions-panel > .action-row { margin-left:18px; margin-right:18px; }
+    .actions-panel label { display:block; margin-top:16px; margin-bottom:6px; color:#344054; font-weight:600; }
+    textarea { display:block; width:calc(100% - 36px); min-height:92px; resize:vertical; padding:10px; border:1px solid #cfd6df; border-radius:9px; color:var(--text); }
+    .action-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .button { border:1px solid #cfd6df; border-radius:8px; background:#fff; color:#344054; padding:9px 12px; cursor:pointer; }
+    .button-primary { border-color:var(--brand); background:var(--brand); color:#fff; }
+    .button-quiet { color:var(--danger); }
+    .button:disabled { cursor:not-allowed; opacity:.42; }
+    .prototype-feedback { min-height:22px; color:var(--muted); }
+    [hidden] { display:none !important; }
+    @media (max-width:820px) { .shell { width:min(100% - 24px,1500px); padding-top:18px; } .page-header,.status-card { align-items:stretch; flex-direction:column; } .metrics { justify-content:flex-start; } .review-grid { grid-template-columns:1fr; } .panel { min-height:0; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="page-header">
+      <div><h1>证据复核工作台</h1><p>把“为什么不能发布”定位到具体陈述、证据与修改动作。</p></div>
+      <div class="prototype-note"><strong>B0 静态原型，不会写入 DeerFlow</strong><br>所有数据来自本地固定夹具，不触发模型或网络请求。</div>
+    </header>
+    <nav class="tabs" aria-label="原型状态样本"><button type="button" class="case-tab is-active" data-target="case-0">不可发布</button><button type="button" class="case-tab" data-target="case-1">待人工复核</button><button type="button" class="case-tab" data-target="case-2">已确认</button><button type="button" class="case-tab" data-target="case-3">校验异常</button></nav>
+    
+    <section class="review-case is-active" data-case="case-0" data-status="blocked">
+      <div class="status-card status-danger">
+        <div>
+          <p class="case-label">不可发布</p>
+          <h2>证据校验：不可发布</h2>
+          <p class="status-subtitle">2 阻断 · 2 警告</p>
+        </div>
+        <div class="metrics" aria-label="系统统计">
+          <span><strong>877 / 800</strong> 字符</span>
+          <span><strong>4</strong> 次查看 / <strong>2</strong> 个唯一页</span>
+        </div>
+      </div>
+
+      <div class="review-grid">
+        <section class="panel" aria-labelledby="claims-0">
+          <h3 id="claims-0">报告陈述</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><span class="mono">v3-c1</span><span class="dimension">capability</span></div><p>可规划、研究并综合复杂问题。</p></article><article class="evidence-row"><div><span class="mono">v3-c2</span><span class="dimension">scope</span></div><p>默认来源包括公开网页与上传文件。</p></article><article class="evidence-row"><div><span class="mono">v3-c3</span><span class="dimension">operational_limit</span></div><p>权限与来源受到约束。</p></article><article class="evidence-row"><div><span class="mono">v3-c4</span><span class="dimension">usage</span></div><p>用量随套餐变化。</p></article><article class="evidence-row"><div><span class="mono">v3-c5</span><span class="dimension">time</span></div><p>2025-02-02 发布。</p></article><article class="evidence-row"><div><span class="mono">v3-c6</span><span class="dimension">model_quality_limit</span></div><p>已读页面未披露幻觉、错误推断、权威来源识别与置信度校准问题，模型质量项未知。</p></article></div>
+        </section>
+        <section class="panel" aria-labelledby="evidence-0">
+          <h3 id="evidence-0">证据原文</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><strong>Deep research in ChatGPT</strong><span class="evidence-status">confirmed</span></div><blockquote>plan, research, and synthesize complex questions</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt</a></article><article class="evidence-row"><div><strong>Deep research FAQ</strong><span class="evidence-status">confirmed</span></div><blockquote>public web and uploaded files</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-faq" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-faq</a></article><article class="evidence-row"><div><strong>Introducing deep research</strong><span class="evidence-status">confirmed</span></div><blockquote>launched February 2, 2025</blockquote><a href="https://openai.com/index/introducing-deep-research/" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/</a></article><article class="evidence-row"><div><strong>Introducing deep research - Limitations</strong><span class="evidence-status">confirmed</span></div><blockquote>hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration</blockquote><a href="https://openai.com/index/introducing-deep-research/#limitations" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/#limitations</a></article></div>
+        </section>
+        <section class="panel" aria-labelledby="findings-0">
+          <h3 id="findings-0">校验发现</h3>
+          <div class="panel-scroll"><article class="finding finding-blocker"><div><strong>EV-03</strong><span>blocker</span></div><p>否定性结论与已绑定证据摘录中的反例冲突。</p><p class="action-copy">建议：展示反例并改写结论，不能把已披露内容写成未知。</p></article><article class="finding finding-blocker"><div><strong>EV-06</strong><span>blocker</span></div><p>正文 877 字符，超过上限 800</p><p class="action-copy">建议：按系统实际统计值缩减输出或重新执行受控任务。</p></article><article class="finding finding-warning"><div><strong>EV-06</strong><span>warning</span></div><p>模型自报 560 字符，系统实际为 877。</p><p class="action-copy">建议：界面和发布判断只采用系统实际统计值。</p></article><article class="finding finding-warning"><div><strong>EV-07</strong><span>warning</span></div><p>4 次页面查看规范化后为 2 个唯一页面。</p><p class="action-copy">建议：合并重复来源，但不要抹去真实页面查看次数。</p></article></div>
+        </section>
+        <section class="panel actions-panel" aria-labelledby="actions-0">
+          <h3 id="actions-0">人工动作</h3>
+          <p>尚无人工决定</p>
+          <label for="reason-0">复核理由</label>
+          <textarea id="reason-0" placeholder="退回或驳回时必须填写"></textarea>
+          <div class="action-row">
+            <button type="button" class="button button-primary" data-action="approve" disabled aria-disabled="true">确认通过</button>
+            <button type="button" class="button" data-action="return">退回修改</button>
+            <button type="button" class="button button-quiet" data-action="reject">驳回</button>
+          </div>
+          <p class="prototype-feedback" role="status"></p>
+        </section>
+      </div>
+    </section>
+    
+    <section class="review-case" data-case="case-1" data-status="review_required" hidden>
+      <div class="status-card status-warning">
+        <div>
+          <p class="case-label">待人工复核</p>
+          <h2>证据校验：待人工复核</h2>
+          <p class="status-subtitle">0 阻断 · 0 警告</p>
+        </div>
+        <div class="metrics" aria-label="系统统计">
+          <span><strong>91 / 800</strong> 字符</span>
+          <span><strong>2</strong> 次查看 / <strong>2</strong> 个唯一页</span>
+        </div>
+      </div>
+
+      <div class="review-grid">
+        <section class="panel" aria-labelledby="claims-1">
+          <h3 id="claims-1">报告陈述</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><span class="mono">v3-c1</span><span class="dimension">capability</span></div><p>可规划、研究并综合复杂问题。</p></article><article class="evidence-row"><div><span class="mono">v3-c2</span><span class="dimension">scope</span></div><p>默认来源包括公开网页与上传文件。</p></article><article class="evidence-row"><div><span class="mono">v3-c3</span><span class="dimension">operational_limit</span></div><p>权限与来源受到约束。</p></article><article class="evidence-row"><div><span class="mono">v3-c4</span><span class="dimension">usage</span></div><p>用量随套餐变化。</p></article><article class="evidence-row"><div><span class="mono">v3-c5</span><span class="dimension">time</span></div><p>2025-02-02 发布。</p></article><article class="evidence-row"><div><span class="mono">v3-c6</span><span class="dimension">model_quality_limit</span></div><p>历史发布页披露了幻觉、错误推断和置信度校准风险。</p></article></div>
+        </section>
+        <section class="panel" aria-labelledby="evidence-1">
+          <h3 id="evidence-1">证据原文</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><strong>Deep research in ChatGPT</strong><span class="evidence-status">confirmed</span></div><blockquote>plan, research, and synthesize complex questions</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt</a></article><article class="evidence-row"><div><strong>Deep research FAQ</strong><span class="evidence-status">confirmed</span></div><blockquote>public web and uploaded files</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-faq" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-faq</a></article><article class="evidence-row"><div><strong>Introducing deep research</strong><span class="evidence-status">confirmed</span></div><blockquote>launched February 2, 2025</blockquote><a href="https://openai.com/index/introducing-deep-research/" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/</a></article><article class="evidence-row"><div><strong>Introducing deep research - Limitations</strong><span class="evidence-status">confirmed</span></div><blockquote>hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration</blockquote><a href="https://openai.com/index/introducing-deep-research/#limitations" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/#limitations</a></article></div>
+        </section>
+        <section class="panel" aria-labelledby="findings-1">
+          <h3 id="findings-1">校验发现</h3>
+          <div class="panel-scroll"><div class="empty success-empty">未发现自动阻断项，等待人工复核。</div></div>
+        </section>
+        <section class="panel actions-panel" aria-labelledby="actions-1">
+          <h3 id="actions-1">人工动作</h3>
+          <p>尚无人工决定</p>
+          <label for="reason-1">复核理由</label>
+          <textarea id="reason-1" placeholder="退回或驳回时必须填写"></textarea>
+          <div class="action-row">
+            <button type="button" class="button button-primary" data-action="approve">确认通过</button>
+            <button type="button" class="button" data-action="return">退回修改</button>
+            <button type="button" class="button button-quiet" data-action="reject">驳回</button>
+          </div>
+          <p class="prototype-feedback" role="status"></p>
+        </section>
+      </div>
+    </section>
+    
+    <section class="review-case" data-case="case-2" data-status="confirmed" hidden>
+      <div class="status-card status-success">
+        <div>
+          <p class="case-label">已确认</p>
+          <h2>证据校验：已确认</h2>
+          <p class="status-subtitle">0 阻断 · 0 警告</p>
+        </div>
+        <div class="metrics" aria-label="系统统计">
+          <span><strong>91 / 800</strong> 字符</span>
+          <span><strong>2</strong> 次查看 / <strong>2</strong> 个唯一页</span>
+        </div>
+      </div>
+
+      <div class="review-grid">
+        <section class="panel" aria-labelledby="claims-2">
+          <h3 id="claims-2">报告陈述</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><span class="mono">v3-c1</span><span class="dimension">capability</span></div><p>可规划、研究并综合复杂问题。</p></article><article class="evidence-row"><div><span class="mono">v3-c2</span><span class="dimension">scope</span></div><p>默认来源包括公开网页与上传文件。</p></article><article class="evidence-row"><div><span class="mono">v3-c3</span><span class="dimension">operational_limit</span></div><p>权限与来源受到约束。</p></article><article class="evidence-row"><div><span class="mono">v3-c4</span><span class="dimension">usage</span></div><p>用量随套餐变化。</p></article><article class="evidence-row"><div><span class="mono">v3-c5</span><span class="dimension">time</span></div><p>2025-02-02 发布。</p></article><article class="evidence-row"><div><span class="mono">v3-c6</span><span class="dimension">model_quality_limit</span></div><p>历史发布页披露了幻觉、错误推断和置信度校准风险。</p></article></div>
+        </section>
+        <section class="panel" aria-labelledby="evidence-2">
+          <h3 id="evidence-2">证据原文</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><strong>Deep research in ChatGPT</strong><span class="evidence-status">confirmed</span></div><blockquote>plan, research, and synthesize complex questions</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt</a></article><article class="evidence-row"><div><strong>Deep research FAQ</strong><span class="evidence-status">confirmed</span></div><blockquote>public web and uploaded files</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-faq" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-faq</a></article><article class="evidence-row"><div><strong>Introducing deep research</strong><span class="evidence-status">confirmed</span></div><blockquote>launched February 2, 2025</blockquote><a href="https://openai.com/index/introducing-deep-research/" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/</a></article><article class="evidence-row"><div><strong>Introducing deep research - Limitations</strong><span class="evidence-status">confirmed</span></div><blockquote>hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration</blockquote><a href="https://openai.com/index/introducing-deep-research/#limitations" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/#limitations</a></article></div>
+        </section>
+        <section class="panel" aria-labelledby="findings-2">
+          <h3 id="findings-2">校验发现</h3>
+          <div class="panel-scroll"><div class="empty success-empty">未发现自动阻断项，等待人工复核。</div></div>
+        </section>
+        <section class="panel actions-panel" aria-labelledby="actions-2">
+          <h3 id="actions-2">人工动作</h3>
+          <p>复核人：reviewer-1 · 时间：2026-09-19T10:03:00+08:00</p>
+          <label for="reason-2">复核理由</label>
+          <textarea id="reason-2" placeholder="退回或驳回时必须填写"></textarea>
+          <div class="action-row">
+            <button type="button" class="button button-primary" data-action="approve" disabled aria-disabled="true">确认通过</button>
+            <button type="button" class="button" data-action="return">退回修改</button>
+            <button type="button" class="button button-quiet" data-action="reject">驳回</button>
+          </div>
+          <p class="prototype-feedback" role="status"></p>
+        </section>
+      </div>
+    </section>
+    
+    <section class="review-case" data-case="case-3" data-status="validator_error" hidden>
+      <div class="status-card status-neutral">
+        <div>
+          <p class="case-label">校验异常</p>
+          <h2>证据校验：校验异常</h2>
+          <p class="status-subtitle">1 阻断 · 0 警告</p>
+        </div>
+        <div class="metrics" aria-label="系统统计">
+          <span><strong>91 / 800</strong> 字符</span>
+          <span><strong>2</strong> 次查看 / <strong>0</strong> 个唯一页</span>
+        </div>
+      </div>
+
+      <div class="review-grid">
+        <section class="panel" aria-labelledby="claims-3">
+          <h3 id="claims-3">报告陈述</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><span class="mono">v3-c1</span><span class="dimension">capability</span></div><p>可规划、研究并综合复杂问题。</p></article><article class="evidence-row"><div><span class="mono">v3-c2</span><span class="dimension">scope</span></div><p>默认来源包括公开网页与上传文件。</p></article><article class="evidence-row"><div><span class="mono">v3-c3</span><span class="dimension">operational_limit</span></div><p>权限与来源受到约束。</p></article><article class="evidence-row"><div><span class="mono">v3-c4</span><span class="dimension">usage</span></div><p>用量随套餐变化。</p></article><article class="evidence-row"><div><span class="mono">v3-c5</span><span class="dimension">time</span></div><p>2025-02-02 发布。</p></article><article class="evidence-row"><div><span class="mono">v3-c6</span><span class="dimension">model_quality_limit</span></div><p>历史发布页披露了幻觉、错误推断和置信度校准风险。</p></article></div>
+        </section>
+        <section class="panel" aria-labelledby="evidence-3">
+          <h3 id="evidence-3">证据原文</h3>
+          <div class="panel-scroll"><article class="evidence-row"><div><strong>Deep research in ChatGPT</strong><span class="evidence-status">confirmed</span></div><blockquote>plan, research, and synthesize complex questions</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt</a></article><article class="evidence-row"><div><strong>Deep research FAQ</strong><span class="evidence-status">confirmed</span></div><blockquote>public web and uploaded files</blockquote><a href="https://help.openai.com/en/articles/10500283-deep-research-faq" target="_blank" rel="noopener noreferrer">https://help.openai.com/en/articles/10500283-deep-research-faq</a></article><article class="evidence-row"><div><strong>Introducing deep research</strong><span class="evidence-status">confirmed</span></div><blockquote>launched February 2, 2025</blockquote><a href="https://openai.com/index/introducing-deep-research/" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/</a></article><article class="evidence-row"><div><strong>Introducing deep research - Limitations</strong><span class="evidence-status">confirmed</span></div><blockquote>hallucinate facts or make incorrect inferences; struggle with authoritative information and confidence calibration</blockquote><a href="https://openai.com/index/introducing-deep-research/#limitations" target="_blank" rel="noopener noreferrer">https://openai.com/index/introducing-deep-research/#limitations</a></article></div>
+        </section>
+        <section class="panel" aria-labelledby="findings-3">
+          <h3 id="findings-3">校验发现</h3>
+          <div class="panel-scroll"><article class="finding finding-blocker"><div><strong>EV-10</strong><span>blocker</span></div><p>校验器执行异常，系统已按 fail-closed 阻断。</p><p class="action-copy">建议：检查校验服务后重新执行，不得绕过门禁。</p></article></div>
+        </section>
+        <section class="panel actions-panel" aria-labelledby="actions-3">
+          <h3 id="actions-3">人工动作</h3>
+          <p>尚无人工决定</p>
+          <label for="reason-3">复核理由</label>
+          <textarea id="reason-3" placeholder="退回或驳回时必须填写"></textarea>
+          <div class="action-row">
+            <button type="button" class="button button-primary" data-action="approve" disabled aria-disabled="true">确认通过</button>
+            <button type="button" class="button" data-action="return">退回修改</button>
+            <button type="button" class="button button-quiet" data-action="reject">驳回</button>
+          </div>
+          <p class="prototype-feedback" role="status"></p>
+        </section>
+      </div>
+    </section>
+    
+  </main>
+  <script>
+    const tabs = document.querySelectorAll('.case-tab');
+    const cases = document.querySelectorAll('.review-case');
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((item) => item.classList.remove('is-active'));
+      cases.forEach((item) => { item.hidden = true; item.classList.remove('is-active'); });
+      tab.classList.add('is-active');
+      const target = document.querySelector(`[data-case="${tab.dataset.target}"]`);
+      target.hidden = false;
+      target.classList.add('is-active');
+    }));
+    document.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => {
+      if (button.disabled) return;
+      const panel = button.closest('.actions-panel');
+      panel.querySelector('.prototype-feedback').textContent = '这是静态交互演示，不会提交或保存决定。';
+    }));
+  </script>
+</body>
+</html>
