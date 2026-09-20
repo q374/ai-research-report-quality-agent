@@ -234,4 +234,3 @@
 - 后端全量不是全绿：基线 4,747 passed / 78 failed / 21 skipped；本轮 4,799 passed / 79 failed / 24 skipped。唯一新增失败是无关 MCP 文件快照测试在 Windows 同大小立即改写时漏判 modified；已隔离归因，B1.1 专项无失败。
 - Docker Desktop 本轮再次出现 dockerInference 通信端点错误；未重置、未删除数据、未继续盲试。因而只证明同代码/配置/SQLite 的本机 Gateway 重启，不声称 Docker 部署验收通过。Dify 未运行。
 - 详细报告：`docs/product/evidence-validator-results/B1_1_ZERO_COST_ACCEPTANCE.md`。Go 到“一个真实付费样本的独立审批”；No-Go 到 T002、批量样本、B2 硬门禁和生产发布。Token/Claim/Evidence 硬上限继续暂不设置。
-
