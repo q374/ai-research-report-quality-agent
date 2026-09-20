@@ -97,6 +97,58 @@ test.describe("Thread history", () => {
     await expect(citation).toHaveAttribute("rel", /noreferrer/);
   });
 
+  test("blocked evidence validation explains why the report cannot be published", async ({
+    page,
+  }) => {
+    mockLangGraphAPI(page, {
+      threads: [
+        {
+          thread_id: CITATION_THREAD_ID,
+          title: "Blocked evidence report",
+          updated_at: "2026-09-20T02:00:00Z",
+        },
+      ],
+    });
+    await page.route("**/evidence-validation", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          validation_id: "validation-1",
+          auto_status: "blocked",
+          validation_result: {
+            status: "blocked",
+            finding_counts: { blocker: 2, warning: 1, info: 0 },
+            findings: [
+              {
+                rule_id: "EV-05",
+                severity: "blocker",
+                message: "可见引用链接与结构化证据绑定不一致。",
+                required_action: "修正引用与证据绑定。",
+              },
+              {
+                rule_id: "EV-06",
+                severity: "blocker",
+                message: "正文超过长度上限。",
+                required_action: "缩减正文后重新校验。",
+              },
+            ],
+          },
+        }),
+      }),
+    );
+
+    await page.goto(`/workspace/chats/${CITATION_THREAD_ID}`);
+
+    const banner = page.getByTestId("evidence-validation-banner");
+    await expect(banner).toContainText("质量校验：暂不建议发布", {
+      timeout: 15_000,
+    });
+    await expect(banner).toContainText("2 个阻断问题，1 个提醒");
+    await expect(banner).toContainText("EV-05");
+    await expect(banner).toContainText("修正引用与证据绑定");
+  });
+
   test("deleting an inactive chat keeps the current chat open", async ({
     page,
   }) => {
