@@ -147,6 +147,8 @@ test.describe("Thread history", () => {
     await expect(banner).toContainText("2 个阻断问题，1 个提醒");
     await expect(banner).toContainText("EV-05");
     await expect(banner).toContainText("修正引用与证据绑定");
+    const bannerBox = await banner.boundingBox();
+    expect(bannerBox?.y).toBeGreaterThanOrEqual(48);
     await expect(banner.getByRole("button", { name: "确认通过" })).toHaveCount(0);
   });
 
