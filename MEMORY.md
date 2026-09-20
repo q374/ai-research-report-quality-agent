@@ -242,3 +242,10 @@
 - 真实样本发现收尾缺陷：模型提交的 Claim/Evidence 字段与 Pydantic 契约不一致，事件记录明确校验错误；因此没有 `evidence.report.submitted` 或最终 `ai_message`，验证记录查询为 404，不能把运行 success 当成质量通过。报告正文程序计数 1,047 个总字符，超过本样本 800 限制；候选证据还包含 `community.openai.com`，违反官方域名白名单。
 - 配置已恢复到样本前版本，临时本机 Gateway 已停止，Docker gateway 重启后 `/health`=200；Dify 运行容器仍为 0。没有保留临时测试账号授权。
 - 详细记录：`docs/product/evidence-validator-results/T001_B1_1_REAL_SAMPLE.md`。当前 No-Go：先零费用修复结构化契约和失败可观察性，再另行申请一次付费复测；不重跑本样本、不执行 T002、不批量调用。
+
+## 2026-09-20 B1.1 真实样本后的零费用修复
+
+- 根因已通过实际 OpenAI 兼容工具 Schema 确认：`submit_evidence_report` 的 `claims/evidence` 原类型为 `list[dict]`，模型只能看到任意对象，无法看到 Pydantic 契约要求的内层字段；真实样本因此猜错字段并在工具执行时失败。
+- 已改为 `list[ClaimCandidate]` 与 `list[EvidenceCandidate]`，最终工具 Schema 现在明确列出全部必填字段和枚举值；没有放宽校验、没有把错误字段映射成成功。新增回归测试先失败后通过，假模型单次调用与 finalizer 行为保持不变。
+- 验证：结构化提交相关 31 passed；B1.1 专项 93 passed；产品 31 passed；B0 8 样本错误放行 0、错误阻断 0、不一致 0；Ruff 通过。后端全量为 4,804 passed / 78 failed / 21 skipped，不是全绿，B1.1 相关测试无失败。
+- 本轮没有联网、模型调用或新增费用。零费用修复已通过，但真实 DeepSeek 是否稳定遵循新 Schema 尚未验证；继续停在一次真实付费复测的独立授权门前，不执行 T002 或批量调用。

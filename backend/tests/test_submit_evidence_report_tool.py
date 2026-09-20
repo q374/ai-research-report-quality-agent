@@ -9,6 +9,7 @@ import pytest
 from _agent_e2e_helpers import FakeToolCallingModel
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import PrivateAttr, ValidationError
 
 from deerflow.agents.middlewares.evidence_report_finalizer_middleware import (
@@ -50,6 +51,29 @@ def tool_args() -> dict:
         ),
         "claims": [make_claim("C1")],
         "evidence": [make_evidence("E1")],
+    }
+
+
+def test_tool_call_schema_exposes_structured_claim_and_evidence_fields() -> None:
+    schema = convert_to_openai_tool(submit_evidence_report_tool)["function"]["parameters"]
+    claim_definition = schema["properties"]["claims"]["items"]
+    evidence_definition = schema["properties"]["evidence"]["items"]
+
+    assert set(claim_definition["required"]) == {
+        "claim_id",
+        "text",
+        "claim_type",
+        "dimension",
+        "is_key",
+        "evidence_ids",
+        "citation_evidence_ids",
+    }
+    assert set(evidence_definition["required"]) == {
+        "evidence_id",
+        "source_url",
+        "title",
+        "excerpt",
+        "proposed_relation",
     }
 
 

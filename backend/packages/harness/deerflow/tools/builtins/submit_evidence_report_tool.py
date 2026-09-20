@@ -8,7 +8,11 @@ from typing import Annotated
 from langchain.tools import InjectedToolCallId, tool
 from langchain_core.messages import ToolMessage
 
-from deerflow.evaluation.evidence_submission import EvidenceReportSubmission
+from deerflow.evaluation.evidence_submission import (
+    ClaimCandidate,
+    EvidenceCandidate,
+    EvidenceReportSubmission,
+)
 from deerflow.tools.types import Runtime
 
 logger = logging.getLogger(__name__)
@@ -18,8 +22,8 @@ logger = logging.getLogger(__name__)
 def submit_evidence_report_tool(
     runtime: Runtime,
     rendered_text: str,
-    claims: list[dict],
-    evidence: list[dict],
+    claims: list[ClaimCandidate],
+    evidence: list[EvidenceCandidate],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> ToolMessage:
     """提交最终研究报告，随后立即结束本次智能体运行。
