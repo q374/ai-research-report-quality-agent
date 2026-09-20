@@ -234,3 +234,11 @@
 - 后端全量不是全绿：基线 4,747 passed / 78 failed / 21 skipped；本轮 4,799 passed / 79 failed / 24 skipped。唯一新增失败是无关 MCP 文件快照测试在 Windows 同大小立即改写时漏判 modified；已隔离归因，B1.1 专项无失败。
 - Docker Desktop 本轮再次出现 dockerInference 通信端点错误；未重置、未删除数据、未继续盲试。因而只证明同代码/配置/SQLite 的本机 Gateway 重启，不声称 Docker 部署验收通过。Dify 未运行。
 - 详细报告：`docs/product/evidence-validator-results/B1_1_ZERO_COST_ACCEPTANCE.md`。Go 到“一个真实付费样本的独立审批”；No-Go 到 T002、批量样本、B2 硬门禁和生产发布。Token/Claim/Evidence 硬上限继续暂不设置。
+
+## 2026-09-20 B1.1 一个真实付费样本
+
+- 用户明确授权且只执行 1 个真实样本：`T001-b1-1-real`、DeepSeek Flash；没有自动重试、没有执行 T002 或批量任务。运行 `ce2c87d0-dba9-47f4-bdeb-cb843136cf3c`，状态 success，延迟 203.096 秒，输入 41,677、输出 1,782、总计 43,459 tokens，模型调用 5 次，估算费用约 0.09761 元，最终账单未核对。
+- 工具实际调用搜索 5 次、页面查看 3 次、结构化提交 1 次。页面查看出现 Jina 匿名访问 401，模型改用搜索摘要继续，不能把页面内容写成已成功核验。
+- 真实样本发现收尾缺陷：模型提交的 Claim/Evidence 字段与 Pydantic 契约不一致，事件记录明确校验错误；因此没有 `evidence.report.submitted` 或最终 `ai_message`，验证记录查询为 404，不能把运行 success 当成质量通过。报告正文程序计数 1,047 个总字符，超过本样本 800 限制；候选证据还包含 `community.openai.com`，违反官方域名白名单。
+- 配置已恢复到样本前版本，临时本机 Gateway 已停止，Docker gateway 重启后 `/health`=200；Dify 运行容器仍为 0。没有保留临时测试账号授权。
+- 详细记录：`docs/product/evidence-validator-results/T001_B1_1_REAL_SAMPLE.md`。当前 No-Go：先零费用修复结构化契约和失败可观察性，再另行申请一次付费复测；不重跑本样本、不执行 T002、不批量调用。
