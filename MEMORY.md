@@ -263,3 +263,10 @@
 - 用户再次明确：学习必须绑定本项目真实运行数据、测试结果和产品决策，不能切换成脱离项目的通用课程列表。
 - 每次恢复或新对话先读取本目录 `AGENTS.md` 与 `MEMORY.md`，再核对产品目录当前 Git、运行与测试状态；解释采用“数据 → 大白话 → 产品判断 → AI 产品经理能力总结”。
 - 当前教学下一步固定为：先做零费用自动调度验收，再用验收结果解释“为什么此前运行成功但没有自动校验”，然后让用户根据真实 blocker 做一次 Go/No-Go 判断；未经单独授权不新增真实模型调用。
+
+## 2026-09-20 阶段一自动校验验收与加固
+
+- 按 insert → verify → cleanup 执行既有程序化零费用验收脚本；验证后事件、run、validation 均恢复为 0，未调用真实模型，新增 API 费用 0 元。
+- 验收结果：6 个事件、1 个 run、1 个 validation 可跨进程读取；`run_status=success`、`semantic_evaluation=evaluated`、`message_id_match=true`、`report_hash_match=true`、`owner_isolation=true`、`model_api_calls=0`。
+- 相关回归专项 103 项通过；随后加入普通登录用户 owner→dispatcher 回归测试，服务层/调度/持久化/权限隔离组合测试 65 项通过。新增提交 `eaef6245 test: cover authenticated owner shadow validation`。
+- 本阶段确认的产品含义：任务成功后可以自动生成质量校验，且不会改写主任务结果；下一步不是继续扩大付费样本，而是进入阶段二，优先解决真实复测中的报告质量和用户可见性问题。
