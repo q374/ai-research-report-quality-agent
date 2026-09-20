@@ -36,5 +36,18 @@ export async function getEvidenceValidation(
   if (!response.ok) {
     throw new Error(`Failed to load evidence validation: ${response.status}`);
   }
-  return response.json();
+  const body = (await response.json()) as {
+    validation_result?: EvidenceValidationRecord;
+    status?: string;
+  };
+  if (
+    body.validation_result &&
+    typeof body.validation_result.status === "string"
+  ) {
+    return body.validation_result;
+  }
+  if (typeof body.status === "string") {
+    return body as EvidenceValidationRecord;
+  }
+  throw new Error("Evidence validation response is missing validation_result");
 }
