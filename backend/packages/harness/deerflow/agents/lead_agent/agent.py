@@ -29,6 +29,9 @@ from langchain_core.runnables import RunnableConfig
 from deerflow.agents.lead_agent.prompt import apply_prompt_template
 from deerflow.agents.memory.summarization_hook import memory_flush_hook
 from deerflow.agents.middlewares.clarification_middleware import ClarificationMiddleware
+from deerflow.agents.middlewares.evidence_report_finalizer_middleware import (
+    EvidenceReportFinalizerMiddleware,
+)
 from deerflow.agents.middlewares.loop_detection_middleware import LoopDetectionMiddleware
 from deerflow.agents.middlewares.memory_middleware import MemoryMiddleware
 from deerflow.agents.middlewares.safety_finish_reason_middleware import SafetyFinishReasonMiddleware
@@ -42,6 +45,7 @@ from deerflow.agents.middlewares.view_image_middleware import ViewImageMiddlewar
 from deerflow.agents.thread_state import ThreadState
 from deerflow.config.agents_config import load_agent_config, validate_agent_name
 from deerflow.config.app_config import AppConfig, get_app_config
+from deerflow.evaluation.evidence_profile import resolve_evidence_profile
 from deerflow.models import create_chat_model
 from deerflow.skills.tool_policy import filter_tools_by_skill_allowed_tools
 from deerflow.skills.types import Skill
@@ -423,6 +427,11 @@ def _make_lead_agent(config: RunnableConfig, *, app_config: AppConfig):
     max_concurrent_subagents = cfg.get("max_concurrent_subagents", 3)
     is_bootstrap = cfg.get("is_bootstrap", False)
     agent_name = validate_agent_name(cfg.get("agent_name"))
+    evidence_profile = (
+        None
+        if is_bootstrap
+        else resolve_evidence_profile(config, resolved_app_config)
+    )
 
     agent_config = load_agent_config(agent_name) if not is_bootstrap else None
     available_skills = _available_skill_names(agent_config, is_bootstrap)
@@ -517,6 +526,25 @@ def _make_lead_agent(config: RunnableConfig, *, app_config: AppConfig):
     raw_tools = get_available_tools(model_name=model_name, groups=agent_config.tool_groups if agent_config else None, subagent_enabled=subagent_enabled, app_config=resolved_app_config)
     filtered = filter_tools_by_skill_allowed_tools(raw_tools + extra_tools, skills_for_tool_policy)
     final_tools, setup = assemble_deferred_tools(filtered, enabled=resolved_app_config.tool_search.enabled)
+    evidence_middlewares: list[AgentMiddleware] = []
+    if evidence_profile is not None:
+        from deerflow.tools.builtins import submit_evidence_report_tool
+
+        if not any(tool.name == submit_evidence_report_tool.name for tool in final_tools):
+            final_tools = [*final_tools, submit_evidence_report_tool]
+        evidence_middlewares.append(EvidenceReportFinalizerMiddleware())
+
+    system_prompt = apply_prompt_template(
+        subagent_enabled=subagent_enabled,
+        max_concurrent_subagents=max_concurrent_subagents,
+        agent_name=agent_name,
+        available_skills=available_skills,
+        app_config=resolved_app_config,
+        deferred_names=setup.deferred_names,
+    )
+    if evidence_profile is not None:
+        system_prompt += evidence_profile.prompt_suffix
+
     return create_agent(
         model=create_chat_model(name=model_name, thinking_enabled=thinking_enabled, reasoning_effort=reasoning_effort, app_config=resolved_app_config, attach_tracing=False),
         tools=final_tools,
@@ -527,14 +555,8 @@ def _make_lead_agent(config: RunnableConfig, *, app_config: AppConfig):
             available_skills=available_skills,
             app_config=resolved_app_config,
             deferred_setup=setup,
+            custom_middlewares=evidence_middlewares,
         ),
-        system_prompt=apply_prompt_template(
-            subagent_enabled=subagent_enabled,
-            max_concurrent_subagents=max_concurrent_subagents,
-            agent_name=agent_name,
-            available_skills=available_skills,
-            app_config=resolved_app_config,
-            deferred_names=setup.deferred_names,
-        ),
+        system_prompt=system_prompt,
         state_schema=ThreadState,
     )

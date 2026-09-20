@@ -416,3 +416,13 @@ def test_system_prompt_template_preserves_placeholders():
         "{subagent_reminder}",
     ):
         assert ph in template, f"placeholder {ph} accidentally removed"
+
+
+def test_evidence_profile_prompt_suffix_requires_single_structured_finalization():
+    from deerflow.evaluation.evidence_profile import EVIDENCE_PROFILE_PROMPT_SUFFIX
+
+    assert "仅在完成研究后调用 submit_evidence_report 一次" in EVIDENCE_PROFILE_PROMPT_SUFFIX
+    assert "rendered_text 是用户最终看到的 Markdown" in EVIDENCE_PROFILE_PROMPT_SUFFIX
+    assert "[citation:来源N](URL)" in EVIDENCE_PROFILE_PROMPT_SUFFIX
+    assert "不得声明人工 confirmed" in EVIDENCE_PROFILE_PROMPT_SUFFIX
+    assert "allowed-user-id" not in EVIDENCE_PROFILE_PROMPT_SUFFIX
