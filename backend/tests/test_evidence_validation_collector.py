@@ -170,3 +170,123 @@ def test_collector_does_not_persist_full_sensitive_tool_arguments():
         "https://example.com/a?ok=1",
         "https://example.com/b?x=2",
     ]
+
+
+def test_collector_uses_matching_persisted_submission_as_live_contract():
+    rendered = "结论。[citation:来源1](https://example.com/doc?id=7)"
+    payload, semantic_state, message_id = collect_shadow_payload(
+        run={"run_id": "r-live", "last_ai_message": rendered},
+        events=[
+            {
+                "seq": 1,
+                "event_type": "llm.ai.response",
+                "content": {
+                    "id": "tool-call-message",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "fetch-1",
+                            "name": "web_fetch",
+                            "args": {"url": "https://example.com/doc?id=7"},
+                        }
+                    ],
+                },
+                "metadata": {"caller": "lead_agent"},
+            },
+            {
+                "seq": 2,
+                "event_type": "llm.tool.result",
+                "content": {
+                    "name": "web_fetch",
+                    "tool_call_id": "fetch-1",
+                    "content": "官方正文 Alpha Beta",
+                },
+                "created_at": "2026-09-20T01:00:00+00:00",
+            },
+            {
+                "seq": 3,
+                "event_type": "evidence.report.submitted",
+                "content": {
+                    "schema_version": "2.0",
+                    "message_id": "report-live",
+                    "rendered_text": rendered,
+                    "claims": [
+                        {
+                            "claim_id": "C1",
+                            "text": "Alpha 是当前能力",
+                            "claim_type": "current_fact",
+                            "dimension": "capability",
+                            "is_key": True,
+                            "evidence_ids": ["E1"],
+                            "citation_evidence_ids": ["E1"],
+                        }
+                    ],
+                    "evidence": [
+                        {
+                            "evidence_id": "E1",
+                            "source_url": "https://example.com/doc?id=7",
+                            "title": "来源",
+                            "published_at": None,
+                            "excerpt": "Alpha Beta",
+                            "proposed_relation": "supports",
+                        }
+                    ],
+                },
+                "metadata": {"message_id": "report-live", "schema_version": "2.0"},
+            },
+            {
+                "seq": 4,
+                "event_type": "ai_message",
+                "content": {"id": "report-live", "content": rendered},
+                "metadata": {"caller": "lead_agent"},
+            },
+        ],
+        brief=valid_brief(),
+        quality_profile_id="evidence-research-v1",
+        source="auto",
+        event_backend="db",
+    )
+
+    assert semantic_state == "evaluated"
+    assert message_id == "report-live"
+    assert payload["claims"][0]["claim_id"] == "C1"
+    assert payload["evidence"][0]["collection_status"] == "observed"
+    assert payload["evidence"][0]["review_status"] == "pending"
+    assert payload["report"]["structure_metrics"]["rendered_char_count"] == len(rendered)
+    assert payload["report"]["structure_metrics"]["claim_count"] == 1
+    assert payload["audit"]["finding_inputs"] == []
+
+
+def test_malformed_live_submission_cannot_fall_back_to_self_reported_metadata():
+    payload, semantic_state, _ = collect_shadow_payload(
+        run={
+            "run_id": "r-malformed",
+            "last_ai_message": "正文",
+            "metadata": {
+                "claims": [{"claim_id": "invented"}],
+                "evidence": [{"evidence_id": "invented"}],
+            },
+        },
+        events=[
+            {
+                "seq": 1,
+                "event_type": "evidence.report.submitted",
+                "content": "不是合法结构",
+            },
+            {
+                "seq": 2,
+                "event_type": "ai_message",
+                "content": {"id": "report-live", "content": "正文"},
+                "metadata": {"caller": "lead_agent"},
+            },
+        ],
+        brief=valid_brief(),
+        quality_profile_id="evidence-research-v1",
+        source="auto",
+        event_backend="db",
+    )
+
+    assert semantic_state == "not_evaluable"
+    assert payload["claims"] == []
+    assert payload["evidence"] == []
+    assert "malformed_evidence_report" in payload["audit"]["data_gaps"]

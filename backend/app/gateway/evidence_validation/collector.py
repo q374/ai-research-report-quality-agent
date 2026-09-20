@@ -8,6 +8,12 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from app.gateway.evidence_validation.observations import (
+    apply_collection_status,
+    collect_observations,
+    select_evidence_submission,
+)
+
 SEARCH_TOOLS = {
     "search",
     "web_search",
@@ -128,6 +134,16 @@ def collect_shadow_payload(
     if len(ordered_events) >= 500:
         data_gaps.append("event_limit_reached")
 
+    observation_index = collect_observations(ordered_events)
+    submission, submission_gaps = select_evidence_submission(ordered_events)
+    has_submission_event = any(
+        event.get("event_type") == "evidence.report.submitted"
+        for event in ordered_events
+    )
+    for gap in submission_gaps:
+        if gap not in data_gaps:
+            data_gaps.append(gap)
+
     observed_searches = 0
     observed_page_urls: list[str] = []
     used_tools: list[str] = []
@@ -182,11 +198,25 @@ def collect_shadow_payload(
     elif rendered_text and last_ai_text and rendered_text != last_ai_text:
         data_gaps.append("final_answer_event_mismatch")
 
-    claims = _structured_list(brief, metadata, "claims")
-    evidence = _structured_list(brief, metadata, "evidence")
-    semantic_state = "evaluated" if claims and evidence else "not_evaluable"
-    if semantic_state == "not_evaluable":
-        data_gaps.append("missing_structured_claims_or_evidence")
+    if observation_index.pages:
+        observed_page_urls = [page.source_url for page in observation_index.pages]
+
+    structure_metrics: dict[str, Any] | None = None
+    finding_inputs: list[dict] = []
+    if submission is not None:
+        collected = apply_collection_status(submission, observation_index)
+        claims = collected["claims"]
+        evidence = collected["evidence"]
+        structure_metrics = collected["metrics"]
+        finding_inputs = collected["findings_input"]
+        semantic_state = "evaluated"
+        message_id = str(submission["message_id"])
+    else:
+        claims = [] if has_submission_event else _structured_list(brief, metadata, "claims")
+        evidence = [] if has_submission_event else _structured_list(brief, metadata, "evidence")
+        semantic_state = "evaluated" if claims and evidence else "not_evaluable"
+        if semantic_state == "not_evaluable":
+            data_gaps.append("missing_structured_claims_or_evidence")
 
     total_tokens = run.get("total_tokens")
     input_tokens = run.get("total_input_tokens")
@@ -200,19 +230,23 @@ def collect_shadow_payload(
     accessed_at = run.get("updated_at") or run.get("created_at") or "unknown"
     model_name = run.get("model_name") if isinstance(run.get("model_name"), str) else "unknown"
 
+    report = {
+        "report_id": str(run.get("run_id") or "unknown-run"),
+        "rendered_text": rendered_text,
+        "observed_searches": observed_searches,
+        "observed_page_urls": observed_page_urls,
+        "used_tools": used_tools,
+        "token_usage": token_usage,
+        "latency_seconds": round(latency_ms / 1000, 3),
+    }
+    if structure_metrics is not None:
+        report["structure_metrics"] = structure_metrics
+
     payload = {
         "brief": copy.deepcopy(brief),
         "claims": claims,
         "evidence": evidence,
-        "report": {
-            "report_id": str(run.get("run_id") or "unknown-run"),
-            "rendered_text": rendered_text,
-            "observed_searches": observed_searches,
-            "observed_page_urls": observed_page_urls,
-            "used_tools": used_tools,
-            "token_usage": token_usage,
-            "latency_seconds": round(latency_ms / 1000, 3),
-        },
+        "report": report,
         "audit": {
             "model": model_name,
             "prompt_version": quality_profile_id,
@@ -222,6 +256,7 @@ def collect_shadow_payload(
             "source": source,
             "quality_profile_id": quality_profile_id,
             "data_gaps": data_gaps,
+            "finding_inputs": finding_inputs,
         },
     }
     return payload, semantic_state, message_id or f"{run.get('run_id', 'unknown-run')}:final"
