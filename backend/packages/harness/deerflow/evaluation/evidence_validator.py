@@ -74,6 +74,44 @@ def _missing_fields(item: object, fields: tuple[str, ...]) -> list[str]:
     return [field for field in fields if field not in item]
 
 
+def _collection_status(item: object) -> str | None:
+    if not isinstance(item, dict):
+        return None
+    value = item.get("collection_status")
+    return value if isinstance(value, str) else None
+
+
+def _review_status(item: object) -> str | None:
+    if not isinstance(item, dict):
+        return None
+    value = item.get("review_status", item.get("status"))
+    return value if isinstance(value, str) else None
+
+
+def _is_live_evidence(item: object) -> bool:
+    return isinstance(item, dict) and "collection_status" in item
+
+
+def _missing_evidence_fields(item: object) -> list[str]:
+    common = (
+        "evidence_id",
+        "source_url",
+        "canonical_url",
+        "title",
+        "published_at",
+        "accessed_at",
+        "excerpt",
+    )
+    missing = _missing_fields(item, common)
+    if not isinstance(item, dict):
+        return missing
+    if _is_live_evidence(item):
+        missing.extend(_missing_fields(item, ("collection_status", "review_status")))
+    else:
+        missing.extend(_missing_fields(item, ("status",)))
+    return missing
+
+
 def validate(payload: dict) -> dict:
     """校验一份结构化研究结果并返回发布状态与问题清单。"""
     if not isinstance(payload, dict):
@@ -143,21 +181,11 @@ def validate(payload: dict) -> dict:
     }
 
     claim_fields = ("claim_id", "text", "claim_type", "dimension", "evidence_ids")
-    evidence_fields = (
-        "evidence_id",
-        "source_url",
-        "canonical_url",
-        "title",
-        "published_at",
-        "accessed_at",
-        "excerpt",
-        "status",
-    )
     malformed_claims = [
         index for index, item in enumerate(claims) if _missing_fields(item, claim_fields)
     ]
     malformed_evidence = [
-        index for index, item in enumerate(evidence) if _missing_fields(item, evidence_fields)
+        index for index, item in enumerate(evidence) if _missing_evidence_fields(item)
     ]
     if malformed_claims or malformed_evidence:
         parts = []
@@ -173,6 +201,73 @@ def validate(payload: dict) -> dict:
                 "补齐对象最小字段后重新校验。",
             )
         )
+
+    # EV-11：新 live contract 只相信系统计算的采集状态。
+    for item in evidence:
+        if not _is_live_evidence(item):
+            continue
+        evidence_id = str(item.get("evidence_id", ""))
+        collection_status = _collection_status(item)
+        if collection_status == "unobserved":
+            findings.append(
+                _finding(
+                    "EV-11",
+                    "blocker",
+                    "证据来源未在本次运行的真实页面访问记录中出现。",
+                    "实际访问该来源并重新提交，不能依赖模型自报。",
+                    evidence_ids=[evidence_id] if evidence_id else [],
+                )
+            )
+        elif collection_status == "truncated":
+            findings.append(
+                _finding(
+                    "EV-11",
+                    "warning",
+                    "页面结果被截断，系统无法完整核对证据摘录。",
+                    "由人工复核原页面，或重新获取完整正文。",
+                    evidence_ids=[evidence_id] if evidence_id else [],
+                )
+            )
+        elif collection_status != "observed":
+            findings.append(
+                _finding(
+                    "EV-11",
+                    "blocker",
+                    "证据缺少有效的系统采集状态。",
+                    "修复事件采集后重新校验。",
+                    evidence_ids=[evidence_id] if evidence_id else [],
+                )
+            )
+
+    finding_inputs = audit.get("finding_inputs")
+    finding_inputs = finding_inputs if isinstance(finding_inputs, list) else []
+    for item in finding_inputs:
+        if not isinstance(item, dict):
+            continue
+        rule_id = item.get("rule_id")
+        if rule_id == "excerpt_not_found":
+            evidence_id = str(item.get("evidence_id", ""))
+            findings.append(
+                _finding(
+                    "EV-12",
+                    "blocker",
+                    "证据摘录未在完整页面结果中找到。",
+                    "修正摘录或重新采集来源正文。",
+                    evidence_ids=[evidence_id] if evidence_id else [],
+                )
+            )
+        elif rule_id == "citation_evidence_mismatch":
+            evidence_ids = item.get("evidence_ids")
+            evidence_ids = evidence_ids if isinstance(evidence_ids, list) else []
+            findings.append(
+                _finding(
+                    "EV-05",
+                    "blocker",
+                    "可见引用链接与结构化证据绑定不一致。",
+                    "使报告中的 citation 链接与 Claim 绑定的 EvidenceItem 一致。",
+                    evidence_ids=[str(value) for value in evidence_ids],
+                )
+            )
 
     # EV-01、EV-02、EV-03、EV-05、EV-08、EV-09：逐条结论校验。
     for claim in claims:
@@ -201,7 +296,13 @@ def validate(payload: dict) -> dict:
                 )
 
         if claim_type == "current_fact" and bound:
-            if not any(item.get("status") == "confirmed" and item.get("current_source") for item in bound):
+            has_eligible_source = any(
+                _collection_status(item) in {"observed", "truncated"}
+                if _is_live_evidence(item)
+                else item.get("status") == "confirmed" and item.get("current_source")
+                for item in bound
+            )
+            if not has_eligible_source:
                 findings.append(
                     _finding(
                         "EV-01",
@@ -259,7 +360,7 @@ def validate(payload: dict) -> dict:
                     )
                 )
 
-        risky = [item for item in bound if item.get("status") == "conflict"]
+        risky = [item for item in bound if _review_status(item) == "conflict"]
         if claim_type in {"current_fact", "historical_fact"} and risky:
             findings.append(
                 _finding(

@@ -131,11 +131,10 @@ class ShadowValidationService:
                 return None
             raise ValueError("手动重放必须提供 ResearchBrief")
 
-        events = await self.event_store.list_events(
-            thread_id,
-            run_id,
-            limit=500,
-        )
+        event_query: dict[str, Any] = {"limit": 500}
+        if isinstance(self.event_store, DbRunEventStore):
+            event_query["user_id"] = owner_user_id
+        events = await self.event_store.list_events(thread_id, run_id, **event_query)
         payload, semantic_state, message_id = collect_shadow_payload(
             run,
             events,
