@@ -331,7 +331,11 @@ async def start_run(
                 detail=f"Model {model_name!r} is not in the configured model allowlist",
             )
 
-    owner_user_id = get_trusted_internal_owner_user_id(request)
+    user = getattr(request.state, "user", None)
+    trusted_owner_user_id = get_trusted_internal_owner_user_id(request)
+    owner_user_id = trusted_owner_user_id
+    if owner_user_id is None and user is not None and getattr(user, "id", None) is not None:
+        owner_user_id = str(user.id)
     # Stateless run endpoints carry thread_id in the request *body*, so the
     # @require_permission(owner_check=True) decorator -- which resolves ownership
     # from the path param -- cannot protect them. Enforce thread ownership here,
@@ -344,7 +348,6 @@ async def start_run(
     # X-DeerFlow-Owner-User-Id, so they are scoped to that owner instead of
     # bypassing the check -- a leaked internal token must not grant cross-user
     # thread access.
-    user = getattr(request.state, "user", None)
     if user is not None:
         allowed = await run_ctx.thread_store.check_access(thread_id, str(user.id))
         if not allowed and owner_user_id and getattr(user, "system_role", None) == INTERNAL_SYSTEM_ROLE:

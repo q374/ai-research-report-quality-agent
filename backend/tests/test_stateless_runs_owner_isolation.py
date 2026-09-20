@@ -131,6 +131,7 @@ def test_stream_owner_passes_owner_check():
         response = client.post("/api/runs/stream", json=_body(THREAD_A))
     assert response.status_code == 409
     create_or_reject.assert_awaited()
+    assert create_or_reject.await_args.kwargs["user_id"] == str(USER_A.id)
 
 
 def test_wait_owner_passes_owner_check():

@@ -249,3 +249,11 @@
 - 已改为 `list[ClaimCandidate]` 与 `list[EvidenceCandidate]`，最终工具 Schema 现在明确列出全部必填字段和枚举值；没有放宽校验、没有把错误字段映射成成功。新增回归测试先失败后通过，假模型单次调用与 finalizer 行为保持不变。
 - 验证：结构化提交相关 31 passed；B1.1 专项 93 passed；产品 31 passed；B0 8 样本错误放行 0、错误阻断 0、不一致 0；Ruff 通过。后端全量为 4,804 passed / 78 failed / 21 skipped，不是全绿，B1.1 相关测试无失败。
 - 本轮没有联网、模型调用或新增费用。零费用修复已通过，但真实 DeepSeek 是否稳定遵循新 Schema 尚未验证；继续停在一次真实付费复测的独立授权门前，不执行 T002 或批量调用。
+
+## 2026-09-20 B1.1 单次真实付费复测
+
+- 用户重新明确授权后只执行 `T001-b1-1-retest` 1 个真实运行；未自动重跑、未执行 T002 或批量任务。运行 `04e68807-5706-473f-8b66-9cc637c0a4ca` 为 success，输入 76,867、输出 1,735、合计 78,602 tokens，底层模型调用 8 次，估算 0.167614 元，最终账单未核对。研究运行约 110 秒；诊断总时长 292.895 秒包含约 180 秒等待缺失自动校验。
+- 工具调用 13 次：搜索 6、页面查看 6、结构化提交 1。Schema 修复在真实 DeepSeek 上生效：产生结构化提交和最终 AI message，message_id 一致，包含 4 Claim、2 Evidence；最终报告引用只使用 `openai.com` 与 `help.openai.com`。
+- 自动 validation 未产生。零费用重放同一持久事件后为 `semantic_evaluation=evaluated`、`blocked`：EV-12 两项、EV-05、EV-04、EV-06 为 blocker，EV-07 为 warning。系统计数 1,079 字符、搜索 6、页面查看 6，超过 800/2/4 限制；Jina 页面抓取仍有 401；人工还发现历史可用性信息被放入当前事实。
+- 自动调度缺陷根因已确认：普通用户运行未把当前用户 ID 写入 `RunRecord`，dispatcher 因 `record.user_id=None` 跳过；数据库后续依靠上下文补写用户，所以手动重放可成功。已显式传递当前用户 ID，同时保持可信内部 owner 优先级；回归测试先失败后通过，权限/调度相关 31 passed、Ruff 通过。
+- 后端全量仍为 4,804 passed / 78 failed / 21 skipped，与修复前一致；本轮修复后没有再次调用模型。临时 Gateway 已停止，临时账号配置已恢复，Dify 保持停止。下一步只做零费用自动调度和质量规则验收，不追加付费样本。
