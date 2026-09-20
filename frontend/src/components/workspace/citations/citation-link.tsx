@@ -28,12 +28,12 @@ export function CitationLink({
     <HoverCard closeDelay={0} openDelay={0}>
       <HoverCardTrigger asChild>
         <a
+          {...props}
           href={href}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center"
           onClick={(e) => e.stopPropagation()}
-          {...props}
         >
           <Badge
             variant="secondary"

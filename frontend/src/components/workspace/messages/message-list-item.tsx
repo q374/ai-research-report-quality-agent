@@ -46,6 +46,7 @@ import { useRehypeSplitWordsIntoSpans } from "@/core/rehype";
 import { cn } from "@/lib/utils";
 
 import { CopyButton } from "../copy-button";
+import { CitationLink } from "../citations/citation-link";
 
 import { MarkdownContent } from "./markdown-content";
 
@@ -224,7 +225,11 @@ function MessageContent_({
       img: (props: ImgHTMLAttributes<HTMLImageElement>) => (
         <MessageImage {...props} threadId={threadId} maxWidth="90%" />
       ),
-      a: ({ href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => {
+      a: ({
+        href,
+        children,
+        ...props
+      }: AnchorHTMLAttributes<HTMLAnchorElement>) => {
         if (href?.startsWith("/mnt/")) {
           const url = resolveArtifactURL(href, threadId);
           return (
@@ -233,10 +238,32 @@ function MessageContent_({
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-            />
+            >
+              {children}
+            </a>
           );
         }
-        return <a {...props} href={href} />;
+        if (typeof children === "string") {
+          const match = /^citation:(.+)$/.exec(children);
+          if (match) {
+            return (
+              <CitationLink {...props} href={href}>
+                {match[1]}
+              </CitationLink>
+            );
+          }
+        }
+        const external = !!href && /^https?:\/\//.test(href);
+        return (
+          <a
+            {...props}
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
+          >
+            {children}
+          </a>
+        );
       },
     }),
     [threadId],

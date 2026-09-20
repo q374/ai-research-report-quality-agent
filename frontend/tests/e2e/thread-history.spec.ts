@@ -20,6 +20,7 @@ const THREADS = [
 ];
 const DEMO_THREAD_ID = "7cfa5f8f-a2f8-47ad-acbd-da7137baf990";
 const SVG_PROMPT_THREAD_ID = "00000000-0000-0000-0000-000000000777";
+const CITATION_THREAD_ID = "00000000-0000-0000-0000-000000000779";
 const SVG_PROMPT_MARKER = "LEAK-STRICT-SVG-PROMPT-SHOULD-DISAPPEAR";
 const OPTIMISTIC_PROMPT_MARKER = "LEAK-OPTIMISTIC-SVG-PROMPT-SHOULD-DISAPPEAR";
 
@@ -63,6 +64,37 @@ test.describe("Thread history", () => {
     await expect(
       page.getByText("Response in thread First conversation"),
     ).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("historical evidence citation opens as a safe external link", async ({
+    page,
+  }) => {
+    mockLangGraphAPI(page, {
+      threads: [
+        {
+          thread_id: CITATION_THREAD_ID,
+          title: "Evidence citation",
+          updated_at: "2026-09-20T01:00:00Z",
+          messages: [
+            {
+              type: "ai",
+              id: "msg-ai-citation",
+              content:
+                "Deep Research 会执行研究。[citation:来源1](https://example.com/source)",
+            },
+          ],
+        },
+      ],
+    });
+
+    await page.goto(`/workspace/chats/${CITATION_THREAD_ID}`);
+
+    const citation = page.getByRole("link", { name: "来源1" });
+    await expect(citation).toBeVisible({ timeout: 15_000 });
+    await expect(citation).toHaveAttribute("href", "https://example.com/source");
+    await expect(citation).toHaveAttribute("target", "_blank");
+    await expect(citation).toHaveAttribute("rel", /noopener/);
+    await expect(citation).toHaveAttribute("rel", /noreferrer/);
   });
 
   test("deleting an inactive chat keeps the current chat open", async ({

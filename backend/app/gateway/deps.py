@@ -230,8 +230,12 @@ async def langgraph_runtime(app: FastAPI, startup_config: AppConfig) -> AsyncGen
                 app.state.run_event_store,
                 run_events_config,
             )
-            evidence_config = config.evidence_validation
-            if evidence_config.enabled and event_backend == "memory":
+            evidence_config = getattr(config, "evidence_validation", None)
+            if (
+                evidence_config is not None
+                and evidence_config.enabled
+                and event_backend == "memory"
+            ):
                 logger.warning(
                     "Evidence validation is enabled with non-persistent run events backend=%s; profiles=%d",
                     event_backend,
