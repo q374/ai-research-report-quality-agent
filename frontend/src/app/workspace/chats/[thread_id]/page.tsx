@@ -11,6 +11,7 @@ import {
   useSpecificChatMode,
   useThreadChat,
 } from "@/components/workspace/chats";
+import { EvidenceValidationBanner } from "@/components/workspace/evidence-validation-banner";
 import { ExportTrigger } from "@/components/workspace/export-trigger";
 import { InputBox } from "@/components/workspace/input-box";
 import {
@@ -198,7 +199,11 @@ export default function ChatPage() {
             </div>
           </header>
           <main className="flex min-h-0 max-w-full grow flex-col">
-            <div className="flex min-h-0 flex-1 justify-center">
+            <div className="flex min-h-0 flex-1 flex-col justify-center">
+              <EvidenceValidationBanner
+                threadId={threadId}
+                enabled={!isNewThread && !isMock && !thread.isLoading}
+              />
               <MessageList
                 className={cn("size-full", !isWelcomeMode && "pt-10")}
                 threadId={threadId}
