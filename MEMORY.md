@@ -270,3 +270,10 @@
 - 验收结果：6 个事件、1 个 run、1 个 validation 可跨进程读取；`run_status=success`、`semantic_evaluation=evaluated`、`message_id_match=true`、`report_hash_match=true`、`owner_isolation=true`、`model_api_calls=0`。
 - 相关回归专项 103 项通过；随后加入普通登录用户 owner→dispatcher 回归测试，服务层/调度/持久化/权限隔离组合测试 65 项通过。新增提交 `eaef6245 test: cover authenticated owner shadow validation`。
 - 本阶段确认的产品含义：任务成功后可以自动生成质量校验，且不会改写主任务结果；下一步不是继续扩大付费样本，而是进入阶段二，优先解决真实复测中的报告质量和用户可见性问题。
+
+## 2026-09-20 阶段二第一项：质量状态用户可见
+
+- 前端新增质量校验结果读取与提示：聊天页会读取最近一次成功 run 的 evidence validation；当状态为 `blocked`、`review_required` 或 `confirmed` 时显示对应中文提示和阻断/提醒数量。无校验记录时不打扰普通聊天。
+- 后端已有受保护的 run 级校验接口，前端现在真正接入该接口，避免“后台发现问题但用户看不到”的产品断层。
+- 前端验证：现有 node_modules 直接执行 TypeScript 检查通过；新增文件及聊天页 ESLint 通过。提交 `bb9d158d feat: surface evidence validation status in chat`。
+- 当前未调用真实模型、未增加费用；Docker Gateway 仍健康。下一项优先补充真实 blocker 的用户可读详情与前端回归测试，再做阶段二的完整基本流程验收。
