@@ -47,7 +47,7 @@ from deerflow.persistence.migrations._helpers import _normalize_default
 asyncio_test = pytest.mark.asyncio
 
 
-HEAD = "0003_evidence_validations"
+HEAD = "0004_evidence_reviews"
 BASELINE = "0001_baseline"
 
 

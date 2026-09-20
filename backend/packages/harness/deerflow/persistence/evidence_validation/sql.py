@@ -11,6 +11,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from deerflow.evaluation.evidence_review_workflow import submit_review as apply_review_decision
 from deerflow.persistence.evidence_validation.model import EvidenceValidationRow
 from deerflow.runtime.user_context import AUTO, _AutoSentinel, resolve_user_id
 from deerflow.utils.time import coerce_iso
@@ -29,6 +30,9 @@ class EvidenceValidationRepository:
         data = row.to_dict()
         data["source_payload"] = data.pop("source_payload_json", {})
         data["validation_result"] = data.pop("validation_result_json", {})
+        data["review_decisions"] = data.pop("review_decisions_json", None) or []
+        data["final_status"] = data.get("final_status") or data.get("auto_status")
+        data["owner_user_id"] = data.get("user_id")
         for key in ("created_at", "updated_at"):
             value = data.get(key)
             if isinstance(value, datetime):
@@ -67,6 +71,8 @@ class EvidenceValidationRepository:
             **required,
             "source_payload_json": record.get("source_payload", {}),
             "validation_result_json": record.get("validation_result", {}),
+            "final_status": record.get("final_status") or record.get("auto_status"),
+            "review_decisions_json": record.get("review_decisions", []),
             "created_at": created_at,
             "updated_at": now,
         }
@@ -135,3 +141,42 @@ class EvidenceValidationRepository:
         async with self._sf() as session:
             row = (await session.execute(statement)).scalar_one_or_none()
             return self._row_to_dict(row) if row is not None else None
+
+    async def submit_review(
+        self,
+        *,
+        validation_id: str,
+        user_id: str,
+        decision: str,
+        expected_report_hash: str,
+        idempotency_key: str,
+        reason: str | None = None,
+    ) -> dict[str, Any]:
+        """Append one owner review bound to the exact report hash."""
+        async with self._sf() as session:
+            statement = (
+                select(EvidenceValidationRow)
+                .where(
+                    EvidenceValidationRow.validation_id == validation_id,
+                    EvidenceValidationRow.user_id == user_id,
+                )
+                .with_for_update()
+            )
+            row = (await session.execute(statement)).scalar_one_or_none()
+            if row is None:
+                raise LookupError("Evidence validation not found")
+
+            current = self._row_to_dict(row)
+            updated = apply_review_decision(
+                current,
+                actor_user_id=user_id,
+                decision=decision,
+                expected_report_hash=expected_report_hash,
+                idempotency_key=idempotency_key,
+                reason=reason,
+            )
+            row.final_status = str(updated["final_status"])
+            row.review_decisions_json = updated["review_decisions"]
+            await session.commit()
+            await session.refresh(row)
+            return self._row_to_dict(row)

@@ -78,6 +78,7 @@ def _make_client(
     run_store.get = AsyncMock(return_value=run)
     repo = MagicMock()
     repo.get_by_run = AsyncMock(return_value=stored)
+    repo.submit_review = AsyncMock(return_value=stored)
     service = MagicMock()
     service.eligibility = MagicMock(return_value="allowed")
     service.process_run = AsyncMock(return_value=deepcopy(validation_record()))
@@ -115,6 +116,27 @@ def test_get_returns_404_when_validation_not_generated():
     with client:
         response = client.get("/api/threads/t-a/runs/r-a/evidence-validation")
     assert response.status_code == 404
+
+
+def test_get_exposes_manual_final_status_in_validation_result():
+    stored = validation_record()
+    stored["final_status"] = "confirmed"
+    stored["review_decisions"] = [
+        {
+            "decision": "approved",
+            "reviewer_user_id": USER_A,
+            "report_hash": stored["report_hash"],
+        }
+    ]
+    client, _, _, _ = _make_client(run=_run(), stored=stored)
+
+    with client:
+        response = client.get("/api/threads/t-a/runs/r-a/evidence-validation")
+
+    assert response.status_code == 200
+    assert response.json()["validation_result"]["status"] == "confirmed"
+    assert response.json()["final_status"] == "confirmed"
+    assert response.json()["review_decisions"][0]["decision"] == "approved"
 
 
 def test_thread_run_mismatch_returns_404():
@@ -177,3 +199,52 @@ def test_manual_replay_rejects_non_allowed_profile_with_409():
         )
     assert response.status_code == 409
     assert service.process_run.await_count == 0
+
+
+def test_owner_can_approve_review_required_report():
+    stored = validation_record()
+    approved = deepcopy(stored)
+    approved["final_status"] = "confirmed"
+    approved["review_decisions"] = [{"decision": "approved"}]
+    client, _, repo, _ = _make_client(run=_run(), stored=stored)
+    repo.submit_review.return_value = approved
+
+    with client:
+        response = client.post(
+            "/api/threads/t-a/runs/r-a/evidence-validation/reviews",
+            json={
+                "decision": "approved",
+                "expected_report_hash": stored["report_hash"],
+                "idempotency_key": "approve-once",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["final_status"] == "confirmed"
+    repo.submit_review.assert_awaited_once_with(
+        validation_id="v1",
+        user_id=USER_A,
+        decision="approved",
+        expected_report_hash="hash-a",
+        idempotency_key="approve-once",
+        reason=None,
+    )
+
+
+def test_review_rejects_stale_report_hash_with_409():
+    stored = validation_record()
+    client, _, repo, _ = _make_client(run=_run(), stored=stored)
+    repo.submit_review.side_effect = ValueError("报告版本已变化，请重新加载校验结果")
+
+    with client:
+        response = client.post(
+            "/api/threads/t-a/runs/r-a/evidence-validation/reviews",
+            json={
+                "decision": "approved",
+                "expected_report_hash": "stale",
+                "idempotency_key": "approve-stale",
+            },
+        )
+
+    assert response.status_code == 409
+    assert "版本" in response.json()["detail"]

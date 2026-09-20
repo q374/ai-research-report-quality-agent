@@ -103,3 +103,103 @@ async def test_record_survives_sqlite_restart(tmp_path: Path):
         assert loaded["source_payload"]["brief"]["task_id"] == "task-1"
     finally:
         await reopened.dispose()
+
+
+async def test_review_decision_is_persisted_and_idempotent(tmp_path: Path):
+    engine, repo = await make_repository(tmp_path / "review.db")
+    try:
+        stored = await repo.upsert(sample_record())
+
+        first = await repo.submit_review(
+            validation_id=stored["validation_id"],
+            user_id="u1",
+            decision="approved",
+            expected_report_hash=stored["report_hash"],
+            idempotency_key="approve-once",
+        )
+        second = await repo.submit_review(
+            validation_id=stored["validation_id"],
+            user_id="u1",
+            decision="approved",
+            expected_report_hash=stored["report_hash"],
+            idempotency_key="approve-once",
+        )
+
+        assert first["final_status"] == second["final_status"] == "confirmed"
+        assert len(first["review_decisions"]) == len(second["review_decisions"]) == 1
+        assert first["review_decisions"][0]["reviewer_user_id"] == "u1"
+
+        reopened = await repo.get_by_run("t1", "r1", user_id="u1")
+        assert reopened is not None
+        assert reopened["final_status"] == "confirmed"
+        assert reopened["review_decisions"] == first["review_decisions"]
+    finally:
+        await engine.dispose()
+
+
+async def test_review_rejects_stale_hash_and_blocked_approval(tmp_path: Path):
+    engine, repo = await make_repository(tmp_path / "review-guard.db")
+    try:
+        stored = await repo.upsert(sample_record())
+        with pytest.raises(ValueError, match="版本已变化"):
+            await repo.submit_review(
+                validation_id=stored["validation_id"],
+                user_id="u1",
+                decision="approved",
+                expected_report_hash="stale",
+                idempotency_key="stale",
+            )
+
+        blocked = sample_record(report_hash="b" * 64)
+        blocked["validation_id"] = "validation-blocked"
+        blocked["run_id"] = "r-blocked"
+        blocked["auto_status"] = "blocked"
+        blocked["validation_result"] = {"status": "blocked", "findings": []}
+        await repo.upsert(blocked)
+        with pytest.raises(ValueError, match="待复核"):
+            await repo.submit_review(
+                validation_id=blocked["validation_id"],
+                user_id="u1",
+                decision="approved",
+                expected_report_hash=blocked["report_hash"],
+                idempotency_key="blocked",
+            )
+    finally:
+        await engine.dispose()
+
+
+async def test_concurrent_different_reviews_accept_only_one_decision(tmp_path: Path):
+    engine, repo = await make_repository(tmp_path / "review-concurrent.db")
+    try:
+        stored = await repo.upsert(sample_record())
+
+        outcomes = await asyncio.gather(
+            repo.submit_review(
+                validation_id=stored["validation_id"],
+                user_id="u1",
+                decision="approved",
+                expected_report_hash=stored["report_hash"],
+                idempotency_key="approve-concurrent",
+            ),
+            repo.submit_review(
+                validation_id=stored["validation_id"],
+                user_id="u1",
+                decision="rejected",
+                expected_report_hash=stored["report_hash"],
+                idempotency_key="reject-concurrent",
+                reason="证据不充分",
+            ),
+            return_exceptions=True,
+        )
+
+        successes = [item for item in outcomes if isinstance(item, dict)]
+        failures = [item for item in outcomes if isinstance(item, Exception)]
+        assert len(successes) == 1
+        assert len(failures) == 1
+        assert isinstance(failures[0], ValueError)
+
+        loaded = await repo.get_by_run("t1", "r1", user_id="u1")
+        assert loaded is not None
+        assert len(loaded["review_decisions"]) == 1
+    finally:
+        await engine.dispose()
