@@ -103,11 +103,12 @@
 - 人工复核相关后端专项：127 项通过，另含 20 个子测试；
 - 真实前端—Gateway—SQLite 联合验收通过，Gateway 重启后审批仍存在；本轮新增真实模型调用 0，新增 API 费用 0 元。
 - 详细证据：[`STAGE3_REVIEW_JOINT_ACCEPTANCE.md`](evidence-validator-results/STAGE3_REVIEW_JOINT_ACCEPTANCE.md)。
+- 实际账号界面验收：前端容器同步后，真实 T001 v3 对话显示质量卡与三类复核控件；[P0_1_REAL_ACCOUNT_UI_ACCEPTANCE.md](evidence-validator-results/P0_1_REAL_ACCOUNT_UI_ACCEPTANCE.md)。
 
 ## 6. 当前没有完成的部分
 
 - 新规则完成后，尚未再进行一次新的真实付费模型运行；
-- 人工复核核心接口已完成真实前端—Gateway—SQLite 联合验收，但身份使用本地合成管理员，尚未完成实际账号登录验收；
+- 人工复核核心接口已完成真实前端—Gateway—SQLite 联合验收；实际登录账号也已完成质量卡与复核控件的读取验收，但尚未由实际账号提交人工决定；
 - 当前只实现报告所有者复核，尚未实现企业里的独立复核角色、多人会签和审批看板；
 - 尚未验证未知样本误报率、真实用户节省时间、生产稳定性和线上价值；
 - 当前不能宣称“上线”“生产可用”或“准确率达到某个百分比”。

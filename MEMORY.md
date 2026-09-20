@@ -320,3 +320,11 @@
 - 真实截图发现质量卡原坐标 `y=0`，被 48 像素顶部栏遮挡。新增坐标回归测试先失败，再增加顶部安全间距和 shrink 防护；修复后 `y=48`，质量卡可见。
 - 验证：TypeScript 通过；相关 ESLint 通过；前端 37 文件、345 项单元测试通过；聊天历史 Chromium 14 项通过；真实联合链路和 Gateway 重启回读通过。
 - 证据：`docs/product/evidence-validator-results/STAGE3_REVIEW_JOINT_ACCEPTANCE.md`。当前仍是所有者自审 MVP，未验证实际账号登录、独立审核人、多人会签、生产部署、未知样本准确率或真实用户价值。
+
+## 2026-09-20 P0-1 运行环境同步与 P0-2 统一 PRD
+
+- P0-1 已完成：运行中 frontend 容器已挂载最新源码，但连续运行约 6 小时的开发实例未正确执行新增质量卡逻辑；数据库中的 T001 v3 校验记录仍在，Gateway 正常。只重启 `deer-flow-frontend` 后，实际登录账号的真实 T001 v3 页面开始请求 evidence-validation 接口（HTTP 200），并显示“质量校验：需要人工复核”及确认、退回、拒绝控件。
+- 本次没有发送聊天消息、没有提交人工决定、没有修改运行数据库、没有调用模型，新增 API 费用 0 元。实际账号只完成读取与界面显示验收；审批写入及跨 Gateway 重启持久化仍沿用此前隔离合成管理员联合验收，不混称为实际账号写入验证。
+- P0-2 已完成：新增统一 PRD `docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`，汇总目标用户假设、JTBD、问题、目标/非目标、流程、状态机、功能需求、质量规则、交互、数据对象、指标、取舍、验收结论、演示路径和后续优先级。
+- P0-1 证据：`docs/product/evidence-validator-results/P0_1_REAL_ACCOUNT_UI_ACCEPTANCE.md`。案例材料已同步真实性边界。
+- 下一步不扩展大功能；优先按统一 PRD 做三分钟演示与面试讲解训练。任何新付费样本、实际账号审批写入、推送或发布仍需单独授权。
