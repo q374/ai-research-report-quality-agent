@@ -277,3 +277,11 @@
 - 后端已有受保护的 run 级校验接口，前端现在真正接入该接口，避免“后台发现问题但用户看不到”的产品断层。
 - 前端验证：现有 node_modules 直接执行 TypeScript 检查通过；新增文件及聊天页 ESLint 通过。提交 `bb9d158d feat: surface evidence validation status in chat`。
 - 当前未调用真实模型、未增加费用；Docker Gateway 仍健康。下一项优先补充真实 blocker 的用户可读详情与前端回归测试，再做阶段二的完整基本流程验收。
+
+## 2026-09-20 阶段二第二项：阻断原因与前后端契约修复
+
+- 质量提示现在不仅显示 `blocked/review_required/confirmed`，还会显示最多 3 条 blocker 的规则编号、原因和整改建议，避免用户只看到“不能发布”却不知道怎么改。
+- 测试中发现真实后端接口把状态放在 `validation_result` 内，前端初版错误地按顶层字段读取；新增接口契约测试先失败，随后修正为规范化后端 envelope，再供 UI 使用。提交 `d081190d fix: normalize evidence validation API response`。
+- 新增详情摘要测试先失败后通过；前端全量单元测试 37 个文件、341 项全部通过，TypeScript 与相关 ESLint 通过。详情提交 `dfa981ca feat: explain evidence validation blockers`。
+- Docker 前端镜像重建因 npm registry 多次 `ECONNRESET` 失败，不归因于代码；现有开发容器保持运行、源码目录已挂载、首页 HTTP 200。浏览器真实视觉验收仍需现有本机登录会话或独立 mock E2E，不把当前结果写成已完成视觉验收。
+- 本轮真实模型调用 0、API 费用 0 元。下一步做 mock 浏览器回归和基本流程验收，再处理真实样本中的质量策略缺口。
