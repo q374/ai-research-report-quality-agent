@@ -2,7 +2,7 @@
 
 更新时间：2026-09-20
 
-- 当前目标：B1.1 零费用实现与验收已完成；停在一个真实付费样本的独立授权门前，不运行 T002、不批量测试。
+- 当前目标：阶段三人工复核真实前端—Gateway—SQLite 联合验收已完成；下一步用真实项目数据进行 AI 产品经理讲解与面试演练，再根据暴露的缺口决定产品优化。未经新授权不运行 T002、不批量测试。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
 - 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
@@ -313,3 +313,10 @@
 - 验证：人工复核相关后端专项 127 项通过并含 20 个子测试；数据库升级/旧库/并发启动 30 项包含在内；前端 37 个文件、345 项单元测试通过，TypeScript、ESLint、Ruff 和 diff-check 通过。
 - 复核请求使用“校验记录 + 决定”的稳定幂等键；同一报告同一决定重试不会生成新键。后端返回报告版本冲突时，前端会显示具体原因，而不是只显示通用 HTTP 错误。修复提交 `fc6999bb fix: make evidence review retries idempotent`。
 - 本阶段只使用本地测试数据库和模拟浏览器接口，真实模型调用 0、API 费用 0 元。当前仍是所有者自审 MVP，不等同于企业独立审核、多人会签或生产审批系统；尚未在真实登录会话中对持久化 API 与界面做一次联合验收。
+## 2026-09-20 阶段三真实联合验收与视觉修复
+
+- 使用隔离临时配置、真实前端、真实 Gateway 和独立 SQLite 完成人工复核联合验收；run 列表、validation GET、review POST 均为真实接口，聊天历史/state 只为避免模型运行而使用本地模拟。身份为 auth-disabled 合成管理员，不是实际账号登录。
+- `review_required` 报告在页面点击“确认通过”后变为 `confirmed`；页面刷新仍为已通过；Gateway 进程重启后 API 与界面仍读取到同一 report_hash 和 1 条 approved 决定。模型调用 0，费用 0 元。
+- 真实截图发现质量卡原坐标 `y=0`，被 48 像素顶部栏遮挡。新增坐标回归测试先失败，再增加顶部安全间距和 shrink 防护；修复后 `y=48`，质量卡可见。
+- 验证：TypeScript 通过；相关 ESLint 通过；前端 37 文件、345 项单元测试通过；聊天历史 Chromium 14 项通过；真实联合链路和 Gateway 重启回读通过。
+- 证据：`docs/product/evidence-validator-results/STAGE3_REVIEW_JOINT_ACCEPTANCE.md`。当前仍是所有者自审 MVP，未验证实际账号登录、独立审核人、多人会签、生产部署、未知样本准确率或真实用户价值。
