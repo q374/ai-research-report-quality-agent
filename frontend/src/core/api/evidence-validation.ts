@@ -10,7 +10,17 @@ export interface EvidenceValidationFinding {
 }
 
 export interface EvidenceValidationRecord {
+  validation_id?: string;
+  run_id?: string;
+  report_hash?: string;
   status: "blocked" | "review_required" | "confirmed" | "rejected" | string;
+  final_status?: string;
+  review_decisions?: Array<{
+    decision?: string;
+    reason?: string;
+    reviewer_user_id?: string;
+    created_at?: string;
+  }>;
   finding_counts?: {
     blocker?: number;
     warning?: number;
@@ -25,6 +35,45 @@ export interface EvidenceValidationRecord {
   };
 }
 
+export interface EvidenceReviewRequest {
+  decision: "approved" | "returned" | "rejected";
+  expected_report_hash: string;
+  idempotency_key: string;
+  reason?: string;
+}
+
+interface EvidenceValidationEnvelope {
+  validation_id?: string;
+  report_hash?: string;
+  auto_status?: string;
+  final_status?: string;
+  review_decisions?: EvidenceValidationRecord["review_decisions"];
+  validation_result?: EvidenceValidationRecord;
+  status?: string;
+}
+
+function normalizeEvidenceValidation(
+  body: EvidenceValidationEnvelope,
+): EvidenceValidationRecord {
+  if (
+    body.validation_result &&
+    typeof body.validation_result.status === "string"
+  ) {
+    return {
+      ...body.validation_result,
+      validation_id: body.validation_id,
+      report_hash: body.report_hash,
+      status: body.final_status ?? body.validation_result.status,
+      final_status: body.final_status,
+      review_decisions: body.review_decisions ?? [],
+    };
+  }
+  if (typeof body.status === "string") {
+    return body as EvidenceValidationRecord;
+  }
+  throw new Error("Evidence validation response is missing validation_result");
+}
+
 export async function getEvidenceValidation(
   threadId: string,
   runId: string,
@@ -36,18 +85,28 @@ export async function getEvidenceValidation(
   if (!response.ok) {
     throw new Error(`Failed to load evidence validation: ${response.status}`);
   }
-  const body = (await response.json()) as {
-    validation_result?: EvidenceValidationRecord;
-    status?: string;
-  };
-  if (
-    body.validation_result &&
-    typeof body.validation_result.status === "string"
-  ) {
-    return body.validation_result;
+  return normalizeEvidenceValidation(
+    (await response.json()) as EvidenceValidationEnvelope,
+  );
+}
+
+export async function submitEvidenceReview(
+  threadId: string,
+  runId: string,
+  request: EvidenceReviewRequest,
+): Promise<EvidenceValidationRecord> {
+  const response = await fetch(
+    `${getBackendBaseURL()}/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/evidence-validation/reviews`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to submit evidence review: ${response.status}`);
   }
-  if (typeof body.status === "string") {
-    return body as EvidenceValidationRecord;
-  }
-  throw new Error("Evidence validation response is missing validation_result");
+  return normalizeEvidenceValidation(
+    (await response.json()) as EvidenceValidationEnvelope,
+  );
 }

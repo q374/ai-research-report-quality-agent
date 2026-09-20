@@ -8,7 +8,10 @@ rs.mock("@/core/config", () => ({
   getBackendBaseURL: () => "/backend",
 }));
 
-import { getEvidenceValidation } from "@/core/api/evidence-validation";
+import {
+  getEvidenceValidation,
+  submitEvidenceReview,
+} from "@/core/api/evidence-validation";
 import { fetch as fetcher } from "@/core/api/fetcher";
 
 const mockedFetch = rs.mocked(fetcher);
@@ -29,7 +32,10 @@ describe("getEvidenceValidation", () => {
     mockedFetch.mockResolvedValueOnce(
       jsonResponse(200, {
         validation_id: "v1",
+        report_hash: "hash-1",
         auto_status: "blocked",
+        final_status: "blocked",
+        review_decisions: [],
         validation_result: {
           status: "blocked",
           finding_counts: { blocker: 2, warning: 1, info: 0 },
@@ -47,7 +53,11 @@ describe("getEvidenceValidation", () => {
     );
 
     await expect(getEvidenceValidation("thread-1", "run-1")).resolves.toEqual({
+      validation_id: "v1",
+      report_hash: "hash-1",
       status: "blocked",
+      final_status: "blocked",
+      review_decisions: [],
       finding_counts: { blocker: 2, warning: 1, info: 0 },
       findings: [
         {
@@ -64,5 +74,65 @@ describe("getEvidenceValidation", () => {
   test("returns null when the run has no validation record", async () => {
     mockedFetch.mockResolvedValueOnce(jsonResponse(404, { detail: "not found" }));
     await expect(getEvidenceValidation("thread-1", "run-1")).resolves.toBeNull();
+  });
+
+  test("prefers the persisted manual final status", async () => {
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse(200, {
+        validation_id: "v1",
+        report_hash: "hash-1",
+        final_status: "confirmed",
+        review_decisions: [{ decision: "approved" }],
+        validation_result: {
+          status: "review_required",
+          finding_counts: { blocker: 0, warning: 0, info: 0 },
+        },
+      }),
+    );
+
+    await expect(getEvidenceValidation("thread-1", "run-1")).resolves.toMatchObject({
+      validation_id: "v1",
+      report_hash: "hash-1",
+      status: "confirmed",
+      final_status: "confirmed",
+      review_decisions: [{ decision: "approved" }],
+    });
+  });
+});
+
+describe("submitEvidenceReview", () => {
+  test("submits an approval bound to the current report hash", async () => {
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse(200, {
+        validation_id: "v1",
+        report_hash: "hash-1",
+        final_status: "confirmed",
+        review_decisions: [{ decision: "approved" }],
+        validation_result: {
+          status: "confirmed",
+          finding_counts: { blocker: 0, warning: 0, info: 0 },
+        },
+      }),
+    );
+
+    await expect(
+      submitEvidenceReview("thread-1", "run-1", {
+        decision: "approved",
+        expected_report_hash: "hash-1",
+        idempotency_key: "review-1",
+      }),
+    ).resolves.toMatchObject({ status: "confirmed" });
+
+    expect(mockedFetch).toHaveBeenCalledWith(
+      "/backend/api/threads/thread-1/runs/run-1/evidence-validation/reviews",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          decision: "approved",
+          expected_report_hash: "hash-1",
+          idempotency_key: "review-1",
+        }),
+      }),
+    );
   });
 });

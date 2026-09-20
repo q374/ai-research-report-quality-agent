@@ -1,10 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, ClipboardCheck } from "lucide-react";
+import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { getAPIClient } from "@/core/api";
-import { getEvidenceValidation } from "@/core/api/evidence-validation";
+import {
+  getEvidenceValidation,
+  submitEvidenceReview,
+} from "@/core/api/evidence-validation";
 import type { EvidenceValidationRecord } from "@/core/api/evidence-validation";
 
 interface EvidenceValidationBannerProps {
@@ -26,6 +32,8 @@ export function summarizeEvidenceValidation(
   const title =
     record.status === "blocked"
       ? "质量校验：暂不建议发布"
+      : record.status === "rejected"
+        ? "质量校验：已拒绝发布"
       : record.status === "confirmed"
         ? "质量校验：已通过"
         : "质量校验：需要人工复核";
@@ -51,8 +59,12 @@ export function EvidenceValidationBanner({
   threadId,
   enabled = true,
 }: EvidenceValidationBannerProps) {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState("");
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const queryKey = ["thread", threadId, "latest-evidence-validation"] as const;
   const query = useQuery<EvidenceValidationRecord | null>({
-    queryKey: ["thread", threadId, "latest-evidence-validation"],
+    queryKey,
     queryFn: async () => {
       if (!threadId) return null;
       const runs = await getAPIClient().runs.list(threadId);
@@ -60,7 +72,8 @@ export function EvidenceValidationBanner({
         .filter((run) => run.status === "success")
         .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
       if (!latest) return null;
-      return getEvidenceValidation(threadId, latest.run_id);
+      const validation = await getEvidenceValidation(threadId, latest.run_id);
+      return validation ? { ...validation, run_id: latest.run_id } : null;
     },
     enabled: enabled && Boolean(threadId),
     retry: false,
@@ -69,11 +82,50 @@ export function EvidenceValidationBanner({
   });
 
   const record = query.data;
+  const reviewMutation = useMutation({
+    mutationFn: async (decision: "approved" | "returned" | "rejected") => {
+      if (!threadId || !record?.run_id || !record.report_hash) {
+        throw new Error("缺少报告版本信息，请刷新页面后重试。");
+      }
+      const normalizedReason = reason.trim();
+      if (decision !== "approved" && !normalizedReason) {
+        throw new Error("退回或拒绝时必须填写理由。");
+      }
+      const idempotencyKey =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `review-${Date.now()}`;
+      return submitEvidenceReview(threadId, record.run_id, {
+        decision,
+        expected_report_hash: record.report_hash,
+        idempotency_key: idempotencyKey,
+        ...(normalizedReason ? { reason: normalizedReason } : {}),
+      });
+    },
+    onMutate: () => setReviewError(null),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKey, {
+        ...updated,
+        run_id: record?.run_id,
+      });
+      setReason("");
+    },
+    onError: (error) => {
+      setReviewError(
+        error instanceof Error ? error.message : "人工复核提交失败，请重试。",
+      );
+    },
+  });
   if (!record) return null;
 
   const summary = summarizeEvidenceValidation(record);
+  const latestReview = record.review_decisions?.at(-1);
   const isBlocked = record.status === "blocked";
   const isConfirmed = record.status === "confirmed";
+  const canReview =
+    (record.status === "review_required" || record.status === "blocked") &&
+    Boolean(record.report_hash) &&
+    (record.review_decisions?.length ?? 0) === 0;
 
   return (
     <div
@@ -93,12 +145,60 @@ export function EvidenceValidationBanner({
         <div className="text-muted-foreground">
           {summary.countText}。模型回答成功不代表报告可以直接发布。
         </div>
+        {latestReview?.reason && (
+          <div className="text-muted-foreground mt-1">
+            复核意见：{latestReview.reason}
+          </div>
+        )}
         {summary.blockerDetails.length > 0 && (
           <ul className="text-muted-foreground mt-1 list-disc space-y-0.5 pl-4">
             {summary.blockerDetails.map((detail) => (
               <li key={detail}>{detail}</li>
             ))}
           </ul>
+        )}
+        {canReview && (
+          <div className="mt-2 space-y-2" data-testid="evidence-review-controls">
+            <Textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="退回修改或拒绝发布时，请填写理由"
+              className="min-h-16 text-xs"
+              aria-label="复核理由"
+            />
+            <div className="flex flex-wrap gap-2">
+              {record.status === "review_required" && (
+                <Button
+                  size="sm"
+                  onClick={() => reviewMutation.mutate("approved")}
+                  disabled={reviewMutation.isPending}
+                >
+                  确认通过
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => reviewMutation.mutate("returned")}
+                disabled={reviewMutation.isPending}
+              >
+                退回修改
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => reviewMutation.mutate("rejected")}
+                disabled={reviewMutation.isPending}
+              >
+                拒绝发布
+              </Button>
+            </div>
+            {reviewError && (
+              <div className="text-destructive" role="alert">
+                {reviewError}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

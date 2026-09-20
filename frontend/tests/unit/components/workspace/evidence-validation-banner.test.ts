@@ -58,5 +58,13 @@ describe("summarizeEvidenceValidation", () => {
       title: "质量校验：已通过",
       countText: "没有阻断问题",
     });
+    expect(
+      summarizeEvidenceValidation({
+        status: "rejected",
+        finding_counts: { blocker: 0, warning: 0 },
+      }),
+    ).toMatchObject({
+      title: "质量校验：已拒绝发布",
+    });
   });
 });

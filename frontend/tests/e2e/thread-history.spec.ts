@@ -147,6 +147,135 @@ test.describe("Thread history", () => {
     await expect(banner).toContainText("2 个阻断问题，1 个提醒");
     await expect(banner).toContainText("EV-05");
     await expect(banner).toContainText("修正引用与证据绑定");
+    await expect(banner.getByRole("button", { name: "确认通过" })).toHaveCount(0);
+  });
+
+  test("reviewer approval is bound to the report hash and updates the banner", async ({
+    page,
+  }) => {
+    mockLangGraphAPI(page, {
+      threads: [
+        {
+          thread_id: CITATION_THREAD_ID,
+          title: "Reviewable evidence report",
+          updated_at: "2026-09-20T03:00:00Z",
+        },
+      ],
+    });
+    let submittedReview: Record<string, unknown> | undefined;
+    await page.route("**/evidence-validation/reviews", async (route) => {
+      submittedReview = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          validation_id: "validation-reviewable",
+          report_hash: "hash-reviewable",
+          final_status: "confirmed",
+          review_decisions: [{ decision: "approved" }],
+          validation_result: {
+            status: "confirmed",
+            finding_counts: { blocker: 0, warning: 0, info: 0 },
+            findings: [],
+          },
+        }),
+      });
+    });
+    await page.route("**/evidence-validation", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          validation_id: "validation-reviewable",
+          report_hash: "hash-reviewable",
+          final_status: "review_required",
+          review_decisions: [],
+          validation_result: {
+            status: "review_required",
+            finding_counts: { blocker: 0, warning: 0, info: 0 },
+            findings: [],
+          },
+        }),
+      }),
+    );
+
+    await page.goto(`/workspace/chats/${CITATION_THREAD_ID}`);
+
+    const banner = page.getByTestId("evidence-validation-banner");
+    await expect(banner).toContainText("质量校验：需要人工复核", {
+      timeout: 15_000,
+    });
+    await banner.getByRole("button", { name: "确认通过" }).click();
+    await expect(banner).toContainText("质量校验：已通过");
+    expect(submittedReview).toMatchObject({
+      decision: "approved",
+      expected_report_hash: "hash-reviewable",
+    });
+    expect(submittedReview?.idempotency_key).toEqual(expect.any(String));
+  });
+
+  test("rejection requires a reason and keeps the audit reason visible", async ({
+    page,
+  }) => {
+    mockLangGraphAPI(page, {
+      threads: [
+        {
+          thread_id: CITATION_THREAD_ID,
+          title: "Rejected evidence report",
+          updated_at: "2026-09-20T04:00:00Z",
+        },
+      ],
+    });
+    await page.route("**/evidence-validation/reviews", async (route) => {
+      const request = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          validation_id: "validation-rejected",
+          report_hash: "hash-rejected",
+          final_status: "rejected",
+          review_decisions: [
+            {
+              decision: "rejected",
+              reason: request.reason,
+            },
+          ],
+          validation_result: {
+            status: "rejected",
+            finding_counts: { blocker: 0, warning: 0, info: 0 },
+            findings: [],
+          },
+        }),
+      });
+    });
+    await page.route("**/evidence-validation", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          validation_id: "validation-rejected",
+          report_hash: "hash-rejected",
+          final_status: "review_required",
+          review_decisions: [],
+          validation_result: {
+            status: "review_required",
+            finding_counts: { blocker: 0, warning: 0, info: 0 },
+            findings: [],
+          },
+        }),
+      }),
+    );
+
+    await page.goto(`/workspace/chats/${CITATION_THREAD_ID}`);
+
+    const banner = page.getByTestId("evidence-validation-banner");
+    await banner.getByRole("button", { name: "拒绝发布" }).click();
+    await expect(banner.getByRole("alert")).toContainText("必须填写理由");
+    await banner.getByRole("textbox", { name: "复核理由" }).fill("证据不充分");
+    await banner.getByRole("button", { name: "拒绝发布" }).click();
+    await expect(banner).toContainText("质量校验：已拒绝发布");
+    await expect(banner).toContainText("复核意见：证据不充分");
   });
 
   test("deleting an inactive chat keeps the current chat open", async ({
