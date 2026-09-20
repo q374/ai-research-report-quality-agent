@@ -12,6 +12,14 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 TRACKING_PARAMS = {"fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"}
 NEGATIVE_MARKERS = ("没有", "未披露", "未列明", "未找到", "无法确认", "未知")
 RISK_EVENT_TERMS = ("暂停", "取消", "涨价", "降价", "下线", "停止注册", "停止开放")
+HISTORICAL_NARRATIVE_MARKERS = (
+    "发布时",
+    "上线时",
+    "首发",
+    "首批",
+    "当时",
+    "曾于",
+)
 CONTRADICTION_GROUPS = (
     {
         "claim_terms": ("幻觉", "错误推断", "权威", "置信度", "模型质量"),
@@ -281,6 +289,20 @@ def validate(payload: dict) -> dict:
         claim_type = claim.get("claim_type")
         evidence_ids = claim.get("evidence_ids") if isinstance(claim.get("evidence_ids"), list) else []
         bound = [evidence_by_id[eid] for eid in evidence_ids if eid in evidence_by_id]
+
+        if claim_type == "current_fact" and any(
+            marker in text for marker in HISTORICAL_NARRATIVE_MARKERS
+        ):
+            findings.append(
+                _finding(
+                    "EV-01",
+                    "blocker",
+                    "当前事实包含明显的历史时间叙述。",
+                    "把该结论改为 historical_fact 并标明时间，或补充可证明当前状态的来源。",
+                    claim_id,
+                    evidence_ids,
+                )
+            )
 
         if claim.get("is_key") and claim_type != "review_question":
             if not evidence_ids or len(bound) != len(evidence_ids):

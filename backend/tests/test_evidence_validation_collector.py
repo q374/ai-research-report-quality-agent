@@ -257,6 +257,61 @@ def test_collector_uses_matching_persisted_submission_as_live_contract():
     assert payload["audit"]["finding_inputs"] == []
 
 
+def test_live_current_fact_with_historical_narrative_is_blocked():
+    payload = {
+        "brief": valid_brief(),
+        "claims": [
+            {
+                "claim_id": "C-history-as-current",
+                "text": "首批向 Pro 开放，Plus 和 Team 用户随后开放。",
+                "claim_type": "current_fact",
+                "dimension": "availability",
+                "is_key": True,
+                "evidence_ids": ["E-history"],
+                "citation_evidence_ids": ["E-history"],
+            }
+        ],
+        "evidence": [
+            {
+                "evidence_id": "E-history",
+                "source_url": "https://example.com/launch",
+                "canonical_url": "https://example.com/launch",
+                "title": "发布公告",
+                "published_at": "2025-02-02",
+                "accessed_at": "2026-09-20",
+                "excerpt": "Initially available to Pro users, with Plus and Team to follow.",
+                "collection_status": "observed",
+                "review_status": "pending",
+            }
+        ],
+        "report": {
+            "report_id": "r-history-as-current",
+            "rendered_text": "首批向 Pro 开放，Plus 和 Team 用户随后开放。",
+            "observed_searches": 1,
+            "observed_page_urls": ["https://example.com/launch"],
+            "used_tools": ["web_search", "web_fetch"],
+            "token_usage": {},
+            "latency_seconds": 1,
+        },
+        "audit": {
+            "model": "fake-model",
+            "prompt_version": "evidence-research-v1",
+            "accessed_at": "2026-09-20",
+            "cost_estimate_cny": 0,
+            "human_review": "pending",
+        },
+    }
+
+    result = validate(payload)
+
+    currentness_findings = [
+        finding for finding in result["findings"] if finding["rule_id"] == "EV-01"
+    ]
+    assert result["status"] == "blocked"
+    assert len(currentness_findings) == 1
+    assert "historical_fact" in currentness_findings[0]["required_action"]
+
+
 def test_malformed_live_submission_cannot_fall_back_to_self_reported_metadata():
     payload, semantic_state, _ = collect_shadow_payload(
         run={

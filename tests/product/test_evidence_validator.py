@@ -143,6 +143,34 @@ class EvidenceValidatorTests(unittest.TestCase):
         approved = self.validator.validate(approved_payload)
         self.assertEqual("confirmed", approved["status"])
 
+    def test_current_fact_with_historical_narrative_is_blocked(self):
+        payload = load_fixture("b0_clean_current")
+        payload["claims"][0]["text"] = "首批向 Pro 开放，Plus 和 Team 用户随后开放。"
+
+        result = self.validator.validate(payload)
+
+        currentness_findings = [
+            finding
+            for finding in result["findings"]
+            if finding["rule_id"] == "EV-01"
+        ]
+        self.assertEqual("blocked", result["status"])
+        self.assertEqual(1, len(currentness_findings))
+        self.assertIn("历史", currentness_findings[0]["message"])
+        self.assertIn("historical_fact", currentness_findings[0]["required_action"])
+
+    def test_process_sequence_word_does_not_trigger_historical_blocker(self):
+        payload = load_fixture("b0_clean_current")
+        payload["claims"][0]["text"] = "系统先检索来源，随后生成带引用的报告。"
+
+        result = self.validator.validate(payload)
+
+        self.assertEqual("review_required", result["status"])
+        self.assertNotIn(
+            "EV-01",
+            {finding["rule_id"] for finding in result["findings"]},
+        )
+
     def test_missing_contract_fails_closed(self):
         result = self.validator.validate({"brief": {"task_id": "broken"}})
         self.assertEqual("blocked", result["status"])
