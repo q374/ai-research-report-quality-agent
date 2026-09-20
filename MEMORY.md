@@ -2,9 +2,9 @@
 
 更新时间：2026-09-20
 
-- 当前目标：阶段三人工复核真实前端—Gateway—SQLite 联合验收已完成；下一步用真实项目数据进行 AI 产品经理讲解与面试演练，再根据暴露的缺口决定产品优化。未经新授权不运行 T002、不批量测试。
+- 当前目标：产品情报 Agent 的本地 MVP、质量校验、人工复核、统一 PRD 与作品集材料已完成，并已安全推送到 GitHub 私有仓库；下一步用真实项目数据进行 AI 产品经理讲解、面试演练与版本迭代。未经新授权不运行 T002、不批量测试。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
-- 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
+- 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 指向用户的 GitHub 私有仓库，upstream 保留官方 DeerFlow 仓库；远端主分支为 main。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
 - 本目录新增 AGENTS.md、MEMORY.md 为项目规则与状态，不是产品功能。
 - 运行入口：Install.md、Makefile、scripts/docker.sh、docker/docker-compose-dev.yaml。backend/frontend 子目录规则按需读取。
@@ -328,3 +328,10 @@
 - P0-2 已完成：新增统一 PRD `docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`，汇总目标用户假设、JTBD、问题、目标/非目标、流程、状态机、功能需求、质量规则、交互、数据对象、指标、取舍、验收结论、演示路径和后续优先级。
 - P0-1 证据：`docs/product/evidence-validator-results/P0_1_REAL_ACCOUNT_UI_ACCEPTANCE.md`。案例材料已同步真实性边界。
 - 下一步不扩展大功能；优先按统一 PRD 做三分钟演示与面试讲解训练。任何新付费样本、实际账号审批写入、推送或发布仍需单独授权。
+## 2026-09-20 GitHub 私有仓库首次推送
+
+- 用户明确授权推送，但要求不得泄露 API；已创建并推送到 GitHub 私有仓库 `https://github.com/q374/product-intelligence-agent`，远端分支为 `main`。这只是私有代码托管，不是公开发布或生产部署。
+- 远端配置已整理：`origin` 指向用户私有仓库，`upstream` 指向官方 DeerFlow 仓库，便于后续分别进行版本迭代和上游对照。
+- 推送前检查确认 `.env`、`frontend/.env`、`config.yaml` 均被 Git 忽略且未被跟踪；对当前跟踪文件及基线后的提交历史做了敏感密钥模式检查，未发现用户的 DeepSeek API。README 中命中的是示例占位符，不是真实密钥。
+- GitHub 页面已回读确认仓库为 Private、`main` 分支和项目文件可见。未创建 PR、未改为公开仓库、未触发部署，也没有调用模型或产生 API 费用。
+- 后续每轮测试应形成“发现问题 → 明确假设 → 修复 → 回归测试 → 记录版本”的迭代闭环；新的真实付费样本仍需单独授权。
