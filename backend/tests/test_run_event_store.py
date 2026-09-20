@@ -6,12 +6,28 @@ Memory tests run directly; DB and JSONL tests create stores inside each test.
 
 import pytest
 
+from app.gateway.evidence_validation.service import detect_event_store_backend
+from deerflow.config.run_events_config import RunEventsConfig
 from deerflow.runtime.events.store.memory import MemoryRunEventStore
 
 
 @pytest.fixture
 def store():
     return MemoryRunEventStore()
+
+
+def test_backend_detection_prefers_actual_memory_store_over_db_config():
+    assert detect_event_store_backend(
+        MemoryRunEventStore(),
+        RunEventsConfig(backend="db"),
+    ) == "memory"
+
+
+def test_backend_detection_uses_frozen_config_for_unknown_store():
+    assert detect_event_store_backend(
+        object(),
+        RunEventsConfig(backend="jsonl"),
+    ) == "jsonl"
 
 
 # -- Basic write and query --

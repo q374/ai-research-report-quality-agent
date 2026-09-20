@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi import Depends, FastAPI
@@ -155,6 +156,29 @@ def test_run_context_app_config_reflects_yaml_edit(tmp_path, monkeypatch):
     # app_config follows the edit; run_events_config stays frozen to the
     # startup snapshot we wrote onto app.state above.
     assert second == {"log_level": "debug", "run_events_config": {"frozen": "startup"}}
+
+
+def test_shadow_service_keeps_startup_run_events_snapshot():
+    from unittest.mock import Mock
+
+    from app.gateway.evidence_validation.service import ShadowValidationService
+    from deerflow.config.run_events_config import RunEventsConfig
+
+    startup = RunEventsConfig(backend="jsonl")
+    live = SimpleNamespace(
+        evidence_validation=SimpleNamespace(enabled=False),
+        run_events=RunEventsConfig(backend="memory"),
+    )
+    service = ShadowValidationService(
+        Mock(),
+        object(),
+        Mock(),
+        config_provider=lambda: live,
+        run_events_config=startup,
+    )
+
+    assert service.run_events_config is startup
+    assert service.event_backend == "jsonl"
 
 
 @pytest.mark.parametrize(

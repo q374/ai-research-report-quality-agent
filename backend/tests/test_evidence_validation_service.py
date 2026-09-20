@@ -10,6 +10,8 @@ import pytest
 
 from app.gateway.evidence_validation.service import ShadowValidationService
 from deerflow.config.evidence_validation_config import EvidenceValidationConfig
+from deerflow.config.run_events_config import RunEventsConfig
+from deerflow.runtime.events.store.memory import MemoryRunEventStore
 
 
 def valid_brief() -> dict:
@@ -44,21 +46,24 @@ def make_service(
     *,
     allowed_users: list[str] | None = None,
     record_builder=None,
+    event_store=None,
+    run_events_config: RunEventsConfig | None = None,
 ) -> ShadowValidationService:
     run_store = Mock()
     run_store.get = AsyncMock(return_value=run)
     run_store.update_status = AsyncMock()
-    event_store = Mock()
-    event_store.list_events = AsyncMock(
-        return_value=[
-            {
-                "seq": 1,
-                "event_type": "llm.ai.response",
-                "content": {"id": "msg-1", "content": "真实最终回答"},
-                "metadata": {"caller": "lead_agent"},
-            }
-        ]
-    )
+    if event_store is None:
+        event_store = Mock()
+        event_store.list_events = AsyncMock(
+            return_value=[
+                {
+                    "seq": 1,
+                    "event_type": "llm.ai.response",
+                    "content": {"id": "msg-1", "content": "真实最终回答"},
+                    "metadata": {"caller": "lead_agent"},
+                }
+            ]
+        )
     repository = Mock()
     stored: dict[tuple[str, str], dict] = {}
 
@@ -81,8 +86,50 @@ def make_service(
         event_store,
         repository,
         config_provider=lambda: config,
+        run_events_config=run_events_config or RunEventsConfig(backend="db"),
         **kwargs,
     )
+
+
+@pytest.mark.anyio
+async def test_memory_backend_marks_non_persistent_gap_even_if_config_says_db():
+    service = make_service(
+        successful_run(),
+        event_store=MemoryRunEventStore(),
+        run_events_config=RunEventsConfig(backend="db"),
+    )
+
+    result = await service.process_run(
+        thread_id="t1",
+        run_id="r1",
+        owner_user_id="u1",
+        quality_profile_id="evidence-research-v1",
+        brief=valid_brief(),
+        source="manual_replay",
+    )
+
+    assert result is not None
+    assert "non_persistent_event_store" in result["source_payload"]["audit"]["data_gaps"]
+
+
+@pytest.mark.anyio
+async def test_db_backend_does_not_mark_non_persistent_gap():
+    service = make_service(
+        successful_run(),
+        run_events_config=RunEventsConfig(backend="db"),
+    )
+
+    result = await service.process_run(
+        thread_id="t1",
+        run_id="r1",
+        owner_user_id="u1",
+        quality_profile_id="evidence-research-v1",
+        brief=valid_brief(),
+        source="manual_replay",
+    )
+
+    assert result is not None
+    assert "non_persistent_event_store" not in result["source_payload"]["audit"]["data_gaps"]
 
 
 @pytest.mark.anyio

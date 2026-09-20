@@ -27,7 +27,10 @@ from fastapi import FastAPI, HTTPException, Request
 from langgraph.types import Checkpointer
 
 from app.gateway.evidence_validation.dispatcher import ShadowValidationDispatcher
-from app.gateway.evidence_validation.service import ShadowValidationService
+from app.gateway.evidence_validation.service import (
+    ShadowValidationService,
+    detect_event_store_backend,
+)
 from deerflow.config.app_config import AppConfig, get_app_config
 from deerflow.persistence.feedback import FeedbackRepository
 from deerflow.runtime import RunContext, RunManager, StreamBridge
@@ -220,8 +223,20 @@ async def langgraph_runtime(app: FastAPI, startup_config: AppConfig) -> AsyncGen
                 app.state.run_event_store,
                 app.state.evidence_validation_repo,
                 config_provider=get_config,
+                run_events_config=run_events_config,
             )
             app.state.shadow_validation_dispatcher = ShadowValidationDispatcher(app.state.evidence_validation_service)
+            event_backend = detect_event_store_backend(
+                app.state.run_event_store,
+                run_events_config,
+            )
+            evidence_config = config.evidence_validation
+            if evidence_config.enabled and event_backend == "memory":
+                logger.warning(
+                    "Evidence validation is enabled with non-persistent run events backend=%s; profiles=%d",
+                    event_backend,
+                    len(evidence_config.quality_profile_ids),
+                )
         else:
             # Memory persistence cannot guarantee durable, idempotent records.
             app.state.evidence_validation_service = None

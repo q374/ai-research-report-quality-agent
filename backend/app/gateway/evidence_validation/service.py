@@ -3,17 +3,41 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
 from app.gateway.evidence_validation.collector import collect_shadow_payload
 from deerflow.evaluation.evidence_review_workflow import build_validation_record
+from deerflow.runtime.events.store.db import DbRunEventStore
+from deerflow.runtime.events.store.jsonl import JsonlRunEventStore
+from deerflow.runtime.events.store.memory import MemoryRunEventStore
 
 logger = logging.getLogger(__name__)
 
 
 def _raise_validator_error(_: dict) -> dict:
     raise RuntimeError("validator failed")
+
+
+def detect_event_store_backend(
+    event_store: Any,
+    run_events_config: Any,
+) -> Literal["memory", "db", "jsonl", "unknown"]:
+    """优先根据实际 store 识别后端，再回退到冻结的启动配置。"""
+    if isinstance(event_store, MemoryRunEventStore):
+        return "memory"
+    if isinstance(event_store, DbRunEventStore):
+        return "db"
+    if isinstance(event_store, JsonlRunEventStore):
+        return "jsonl"
+
+    if isinstance(run_events_config, Mapping):
+        configured = run_events_config.get("backend")
+    else:
+        configured = getattr(run_events_config, "backend", None)
+    if configured in {"memory", "db", "jsonl"}:
+        return configured
+    return "unknown"
 
 
 class ShadowValidationService:
@@ -25,12 +49,18 @@ class ShadowValidationService:
         event_store: Any,
         repository: Any,
         config_provider: Callable[[], Any],
+        run_events_config: Any = None,
         record_builder: Callable[..., dict] = build_validation_record,
     ) -> None:
         self.run_store = run_store
         self.event_store = event_store
         self.repository = repository
         self.config_provider = config_provider
+        self.run_events_config = run_events_config
+        self.event_backend = detect_event_store_backend(
+            event_store,
+            run_events_config,
+        )
         self.record_builder = record_builder
 
     def _config(self) -> Any:
@@ -112,6 +142,7 @@ class ShadowValidationService:
             brief=selected_brief,
             quality_profile_id=str(selected_profile),
             source=source,
+            event_backend=self.event_backend,
         )
         record_kwargs = {
             "thread_id": thread_id,

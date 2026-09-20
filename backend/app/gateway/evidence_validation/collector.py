@@ -108,10 +108,13 @@ def collect_shadow_payload(
     brief: dict,
     quality_profile_id: str,
     source: str,
+    event_backend: str | None = None,
 ) -> tuple[dict, str, str]:
     """采集系统事实；不从自然语言猜测 Claim/Evidence。"""
     metadata = run.get("metadata") if isinstance(run.get("metadata"), dict) else {}
     data_gaps: list[str] = []
+    if event_backend not in {"db", "jsonl"}:
+        data_gaps.append("non_persistent_event_store")
     rendered_text = run.get("last_ai_message")
     rendered_text = rendered_text if isinstance(rendered_text, str) else ""
     rendered_text = rendered_text.strip()
