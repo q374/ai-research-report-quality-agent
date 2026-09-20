@@ -372,6 +372,24 @@ class RunJournal(BaseCallbackHandler):
         finally:
             logger.debug("Tool end for node %s", run_id)
 
+    def record_evidence_report(self, payload: dict, *, message_id: str) -> None:
+        """记录由最终报告工具产生的结构化证据事件。"""
+        self._put(
+            event_type="evidence.report.submitted",
+            category="outputs",
+            content=payload,
+            metadata={"message_id": message_id, "schema_version": "2.0"},
+        )
+
+    def record_final_ai_message(self, message: AIMessage) -> None:
+        """记录确定性收尾中间件追加的用户可见最终消息。"""
+        self._put(
+            event_type="ai_message",
+            category="message",
+            content=message.model_dump(),
+        )
+        self._record_message_summary(message)
+
     # -- Internal methods --
 
     def _put(self, *, event_type: str, category: str, content: str | dict = "", metadata: dict | None = None) -> None:

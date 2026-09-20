@@ -223,6 +223,25 @@ class TestToolCallbacks:
         assert messages[0]["content"]["content"] == "file list"
 
     @pytest.mark.anyio
+    async def test_record_final_ai_message_persists_user_visible_message(self, journal_setup):
+        """确定性收尾生成的 AIMessage 必须写入运行消息。"""
+        from langchain_core.messages import AIMessage
+
+        j, store = journal_setup
+        ai_message = AIMessage(
+            content="最终报告",
+            id="evidence-report:call-report",
+        )
+
+        j.record_final_ai_message(ai_message)
+        await j.flush()
+
+        messages = await store.list_messages("t1")
+        assert [message["event_type"] for message in messages] == ["ai_message"]
+        assert messages[0]["content"]["content"] == "最终报告"
+        assert j.get_completion_data()["last_ai_message"] == "最终报告"
+
+    @pytest.mark.anyio
     async def test_on_tool_error_no_crash(self, journal_setup):
         """on_tool_error should not crash (no event emitted by default)."""
         j, store = journal_setup

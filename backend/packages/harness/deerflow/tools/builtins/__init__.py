@@ -1,12 +1,14 @@
 from .clarification_tool import ask_clarification_tool
 from .present_file_tool import present_file_tool
 from .setup_agent_tool import setup_agent
+from .submit_evidence_report_tool import submit_evidence_report_tool
 from .task_tool import task_tool
 from .update_agent_tool import update_agent
 from .view_image_tool import view_image_tool
 
 __all__ = [
     "setup_agent",
+    "submit_evidence_report_tool",
     "update_agent",
     "present_file_tool",
     "ask_clarification_tool",
