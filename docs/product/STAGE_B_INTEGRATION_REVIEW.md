@@ -301,3 +301,25 @@ flowchart LR
 ### 当前 No-Go
 
 仍不进入 B2 全量硬门禁。下一阶段先评审是否把 run events 改为可持久化，并让研究质量配置原生输出结构化 Claim/Evidence；随后用新的、明确授权的样本测量误报率和人工复核效率。未经新授权不运行 T002 或新的付费回归。
+
+## 17. B1.1 持久化证据零费用验收（2026-09-20）
+
+### 实际结果
+
+- 已实现同一次研究中的结构化 Claim/Evidence 提交、确定性收尾、持久化事件采集与确定性校验；不引入第二个评分模型。
+- 程序化测试 run 在第一次 Gateway 进程写入 6 条事件、1 条 run 和 1 条 validation；第二次 Gateway 进程仍读取到相同数量，`message_id` 与重新计算的 `report_hash` 一致。
+- run 的 `status=success`、`total_tokens=42`、`llm_call_count=1` 在重启前后不变；这是合成字段，不是实际模型用量。新 Gateway 日志中的 `chat/completions` 为 0。
+- 引用 E2E 共 11 项通过；只检查链接文本、地址和安全属性，没有访问外部页面。B0 8 个样本继续保持零错误放行、零错误阻断、零不一致。
+- 测试数据按合成 owner 清理：清理前 6 event / 1 run / 1 validation，清理后全部为 0。
+
+详细证据见 [`evidence-validator-results/B1_1_ZERO_COST_ACCEPTANCE.md`](evidence-validator-results/B1_1_ZERO_COST_ACCEPTANCE.md)。
+
+### 运行边界
+
+Docker Desktop 本轮再次因 `dockerInference` 错误无法启动。为避免重置或删除数据，本轮使用同一代码、忽略配置和 SQLite 的本机 Gateway 进程完成等价重启验收；因此不能声称 Docker 部署态已经通过。Dify 未运行，也没有改动其容器或卷。
+
+### Go / No-Go
+
+- **Go：** 技术上可进入一个真实付费样本的独立审批，用于测量 Token、调用次数、延迟、费用和结构体积。
+- **No-Go：** 不进入批量样本、T002、B2 硬门禁或生产发布；不把程序化合成 run 当成真实模型效果。
+- Token、Claim、Evidence 和摘录硬上限继续暂不设置，等单样本真实数据后再决策。

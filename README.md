@@ -734,8 +734,17 @@ evidence_validation:
 - 查询：`GET /api/threads/{thread_id}/runs/{run_id}/evidence-validation`。
 - 重放：`POST /api/threads/{thread_id}/runs/{run_id}/evidence-validation/replay`，仅所有者、允许账号和允许 profile 可用。
 - 持久化：Alembic revision `0003_evidence_validations` 创建独立表；`(run_id, report_hash)` 保证同一报告重放幂等。
+- 事件存储：证据模式必须在 Git 忽略的本机 `config.yaml` 中使用 `run_events.backend: db`。若仍为 `memory`，主回答继续显示，但校验记录必须包含 `non_persistent_event_store` 数据缺口，不能冒充持久化验收通过。
+- 结构化提交：允许账号且启用 `evidence-research-v1` 时，Agent 可调用 `submit_evidence_report` 提交 Claim/Evidence 候选；确定性结束中间件生成最终可见 AI 消息，不为了质检追加第二次模型调用。
+- 状态分层：系统只认实际 event 观测；Agent 只能提出证据关系；自动结果只能是 `blocked` 或 `review_required`，不能产生人工 `confirmed`。
+- 引用展示：正文中的 `[citation:来源1](https://...)` 显示为“来源1”链接，在新窗口打开并带 `noopener noreferrer`。
 
-这是旁路观测能力，不是全量发布硬门禁，也不代表报告事实已经由人工确认。
+```yaml
+run_events:
+  backend: db
+```
+
+这是旁路观测能力，不是全量发布硬门禁，也不代表报告事实已经由人工确认。普通聊天、未允许账号和未启用 profile 的 run 继续走原流程。
 ## Documentation
 
 - [Contributing Guide](CONTRIBUTING.md) - Development environment setup and workflow

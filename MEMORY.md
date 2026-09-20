@@ -2,14 +2,14 @@
 
 更新时间：2026-09-20
 
-- 当前目标：B1.1 已进入实施；任务 1 的结构化提交契约已完成。用户已确认任务 2 的零二次调用修正版，正在更新规格并实现确定性收尾中间件。
+- 当前目标：B1.1 零费用实现与验收已完成；停在一个真实付费样本的独立授权门前，不运行 T002、不批量测试。
 - 目录：D:\AI产品经理简历\项目经历\product-intelligence-agent。
 - 基线：v2.0.0 / 7e7f0410797693cf882594555ba414e0361d4c6f；开发分支 codex/product-intelligence-mvp。origin 与 upstream 均指向官方仓库，不推送。
 - 迁移验证：1388 个文件，除路径检查自动更新的 .git/index 缓存外 SHA256 一致；索引 ls-files --stage 一致；git fsck --full 通过。原版源码未改动。
 - 本目录新增 AGENTS.md、MEMORY.md 为项目规则与状态，不是产品功能。
 - 运行入口：Install.md、Makefile、scripts/docker.sh、docker/docker-compose-dev.yaml。backend/frontend 子目录规则按需读取。
-- 当前运行：Docker 上的 frontend、gateway、nginx 健康；Dify 容器保持停止，避免同时占用内存。DeepSeek Flash 已完成基础对话和 T001 联网评测。
-- 当前评测：T001 v1 至 v3 均已执行；最新 v3 得分 36、判定“需改进”。阶段 A、B0 与 B1 已完成：真实旧 run 的零费用重放、幂等、重启持久化和权限边界已验证；语义仍为 not_evaluable，暂停追加付费回归与 T002。
+- 当前运行：Docker Desktop 于 2026-09-20 再次出现 dockerInference 启动错误，本轮未重置或删除数据；B1.1 使用本机 Gateway 完成等价验收后已停止。Dify 未运行。
+- 当前评测：T001 v1 至 v3 已执行；最新 v3 得分 36、判定“需改进”。阶段 A、B0、B1 与 B1.1 零费用闭环已完成；B1.1 程序化 run 为 evaluated，但不代表真实模型效果。等待用户另行授权一个真实付费样本。
 - 产品规格与评测证据见 `docs/product/PRODUCT_OPPORTUNITY.md` 和 `docs/product/DEERFLOW_EVALUATION_SCORECARD.xlsx`；始终保留合成数据、真实 API、人工复核和生产发布之间的真实性边界。
 
 ## 模型输入准备
@@ -224,4 +224,14 @@
 - 任务 2 的真实 LangChain 1.2.15 假模型集成测试发现：`return_direct=True` 工具若通过 `Command` 追加 `[ToolMessage, AIMessage]`，框架仍调用模型第 2 次。根因是 tools-to-model 路由读取最后新增的无 tool_calls AIMessage，因而回到 model；追加 `goto=END` 也不能改变该行为。
 - 已用零费用探针验证替代：工具只返回 ToolMessage，让 return_direct 正常退出；专用 after_agent 中间件再确定性补写最终 AIMessage。结果为模型调用 1 次，末尾消息 `[tool, ai]`，正文正确。
 - 该替代会把“AIMessage 由工具直接追加”改为“由确定性结束中间件追加”，用户结果和成本目标不变，但属于实现架构修订。用户已于 2026-09-20 明确确认按此修正版继续；不得用第二次模型调用绕过。
+## 2026-09-20 B1.1 零费用实现与验收
+
+- 任务 1—6 已完成并本地提交：结构化提交契约、确定性直接结束、账号/profile 门禁、事件持久化就绪、真实事件观测映射和持久化校验闭环。任务 7 的引用安全与 Gateway 兼容修复提交为 `7e9b9cd8`；未推送、未发布。
+- `submit_evidence_report` 使用 ToolMessage + 确定性 after-agent 中间件形成最终 AIMessage；真实 LangChain 假模型测试保持 1 次调用，没有为质检追加第二次模型调用。
+- Git 忽略的 `config.yaml` 已将 `run_events.backend` 改为 `db`。程序化 `b1-1-zero-cost-*` 数据在两次本机 Gateway 进程间保持：6 event、1 run、1 validation；message_id/report_hash 一致，run 的 success、42 tokens、llm_call_count=1 不变；新日志 chat/completions 为 0。
+- 合成测试数据已按 owner 范围清理，清理后 event/run/validation 均为 0。该 run 不是模型样本，42 tokens 和调用数 1 只是持久化断言数据；本阶段新增真实模型调用 0、费用 0 元。
+- 引用 E2E 11 项通过，验证“来源1”链接文本、URL、新窗口与 noopener/noreferrer；没有访问外部页面。后端专项 92 项、产品 31 项、B0 8 样本回放、Ruff、compileall、类型检查和构建通过。
+- 后端全量不是全绿：基线 4,747 passed / 78 failed / 21 skipped；本轮 4,799 passed / 79 failed / 24 skipped。唯一新增失败是无关 MCP 文件快照测试在 Windows 同大小立即改写时漏判 modified；已隔离归因，B1.1 专项无失败。
+- Docker Desktop 本轮再次出现 dockerInference 通信端点错误；未重置、未删除数据、未继续盲试。因而只证明同代码/配置/SQLite 的本机 Gateway 重启，不声称 Docker 部署验收通过。Dify 未运行。
+- 详细报告：`docs/product/evidence-validator-results/B1_1_ZERO_COST_ACCEPTANCE.md`。Go 到“一个真实付费样本的独立审批”；No-Go 到 T002、批量样本、B2 硬门禁和生产发布。Token/Claim/Evidence 硬上限继续暂不设置。
 
