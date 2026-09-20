@@ -9,6 +9,7 @@ rs.mock("@/core/config", () => ({
 }));
 
 import {
+  buildEvidenceReviewIdempotencyKey,
   getEvidenceValidation,
   submitEvidenceReview,
 } from "@/core/api/evidence-validation";
@@ -101,6 +102,15 @@ describe("getEvidenceValidation", () => {
 });
 
 describe("submitEvidenceReview", () => {
+  test("reuses a stable idempotency key for the same report decision", () => {
+    expect(
+      buildEvidenceReviewIdempotencyKey("validation-1", "approved"),
+    ).toBe("evidence-review:validation-1:approved");
+    expect(
+      buildEvidenceReviewIdempotencyKey("validation-1", "approved"),
+    ).toBe("evidence-review:validation-1:approved");
+  });
+
   test("submits an approval bound to the current report hash", async () => {
     mockedFetch.mockResolvedValueOnce(
       jsonResponse(200, {
@@ -134,5 +144,19 @@ describe("submitEvidenceReview", () => {
         }),
       }),
     );
+  });
+
+  test("surfaces the server reason when the report version is stale", async () => {
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse(409, { detail: "报告版本已变化，请重新加载校验结果" }),
+    );
+
+    await expect(
+      submitEvidenceReview("thread-1", "run-1", {
+        decision: "approved",
+        expected_report_hash: "stale",
+        idempotency_key: "review-stale",
+      }),
+    ).rejects.toThrow("报告版本已变化");
   });
 });

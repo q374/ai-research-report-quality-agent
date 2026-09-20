@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getAPIClient } from "@/core/api";
 import {
+  buildEvidenceReviewIdempotencyKey,
   getEvidenceValidation,
   submitEvidenceReview,
 } from "@/core/api/evidence-validation";
@@ -84,17 +85,22 @@ export function EvidenceValidationBanner({
   const record = query.data;
   const reviewMutation = useMutation({
     mutationFn: async (decision: "approved" | "returned" | "rejected") => {
-      if (!threadId || !record?.run_id || !record.report_hash) {
+      if (
+        !threadId ||
+        !record?.run_id ||
+        !record.validation_id ||
+        !record.report_hash
+      ) {
         throw new Error("缺少报告版本信息，请刷新页面后重试。");
       }
       const normalizedReason = reason.trim();
       if (decision !== "approved" && !normalizedReason) {
         throw new Error("退回或拒绝时必须填写理由。");
       }
-      const idempotencyKey =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `review-${Date.now()}`;
+      const idempotencyKey = buildEvidenceReviewIdempotencyKey(
+        record.validation_id,
+        decision,
+      );
       return submitEvidenceReview(threadId, record.run_id, {
         decision,
         expected_report_hash: record.report_hash,

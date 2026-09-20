@@ -35,11 +35,20 @@ export interface EvidenceValidationRecord {
   };
 }
 
+export type EvidenceReviewDecision = "approved" | "returned" | "rejected";
+
 export interface EvidenceReviewRequest {
-  decision: "approved" | "returned" | "rejected";
+  decision: EvidenceReviewDecision;
   expected_report_hash: string;
   idempotency_key: string;
   reason?: string;
+}
+
+export function buildEvidenceReviewIdempotencyKey(
+  validationId: string,
+  decision: EvidenceReviewDecision,
+): string {
+  return `evidence-review:${validationId}:${decision}`;
 }
 
 interface EvidenceValidationEnvelope {
@@ -104,7 +113,14 @@ export async function submitEvidenceReview(
     },
   );
   if (!response.ok) {
-    throw new Error(`Failed to submit evidence review: ${response.status}`);
+    let detail: string | undefined;
+    try {
+      const errorBody = (await response.json()) as { detail?: unknown };
+      if (typeof errorBody.detail === "string") detail = errorBody.detail;
+    } catch {
+      // 非 JSON 错误响应回退为状态码。
+    }
+    throw new Error(detail ?? `人工复核提交失败：${response.status}`);
   }
   return normalizeEvidenceValidation(
     (await response.json()) as EvidenceValidationEnvelope,
