@@ -708,6 +708,74 @@ def test_start_run_uses_internal_owner_header_for_persistence(_stub_app_config):
     assert task_context["user_id"] == "owner-1"
 
 
+def test_start_run_passes_authenticated_user_to_shadow_validation(_stub_app_config):
+    """普通登录用户的 run 也必须带 owner，才能自动触发影子校验。
+
+    这条回归测试锁定真实故障：此前普通用户的 RunRecord.user_id 为空，
+    dispatcher 会安全跳过，导致任务 success 但没有自动质量校验记录。
+    """
+    import asyncio
+    from types import SimpleNamespace
+    from unittest.mock import MagicMock, patch
+
+    from langgraph.checkpoint.memory import InMemorySaver
+    from langgraph.store.memory import InMemoryStore
+    from app.gateway.services import start_run
+    from deerflow.persistence.thread_meta.memory import MemoryThreadMetaStore
+    from deerflow.runtime import RunManager
+    from deerflow.runtime.runs.store.memory import MemoryRunStore
+
+    async def _scenario():
+        run_manager = RunManager(store=MemoryRunStore())
+        dispatcher = MagicMock()
+        state = SimpleNamespace(
+            stream_bridge=SimpleNamespace(),
+            run_manager=run_manager,
+            checkpointer=InMemorySaver(),
+            store=InMemoryStore(),
+            run_event_store=SimpleNamespace(),
+            run_events_config=None,
+            thread_store=MemoryThreadMetaStore(InMemoryStore()),
+            shadow_validation_dispatcher=dispatcher,
+        )
+        request = SimpleNamespace(
+            headers={},
+            state=SimpleNamespace(
+                user=SimpleNamespace(id="user-1", system_role="user"),
+            ),
+            app=SimpleNamespace(state=state),
+        )
+        body = SimpleNamespace(
+            assistant_id="lead_agent",
+            input={"messages": [{"role": "human", "content": "hi"}]},
+            metadata={},
+            config=None,
+            context=None,
+            on_disconnect="cancel",
+            multitask_strategy="reject",
+            stream_mode=None,
+            stream_subgraphs=False,
+            interrupt_before=None,
+            interrupt_after=None,
+        )
+
+        async def fake_run_agent(*args, **kwargs):
+            return None
+
+        with (
+            patch("app.gateway.services.resolve_agent_factory", return_value=object()),
+            patch("app.gateway.services.run_agent", side_effect=fake_run_agent),
+        ):
+            record = await start_run(body, "user-thread", request)
+            await record.task
+        return record, dispatcher
+
+    record, dispatcher = asyncio.run(_scenario())
+
+    assert record.user_id == "user-1"
+    dispatcher.schedule.assert_called_once_with(record)
+
+
 # ---------------------------------------------------------------------------
 # build_run_config — context / configurable precedence (LangGraph >= 0.6.0)
 # ---------------------------------------------------------------------------
