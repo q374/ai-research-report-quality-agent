@@ -233,12 +233,7 @@ function MessageContent_({
         if (href?.startsWith("/mnt/")) {
           const url = resolveArtifactURL(href, threadId);
           return (
-            <a
-              {...props}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a {...props} href={url} target="_blank" rel="noopener noreferrer">
               {children}
             </a>
           );
