@@ -143,11 +143,7 @@ async def create_run(run_store: MemoryRunStore, *, run_id: str, with_events: boo
         status="success",
         total_tokens=42,
         llm_call_count=1,
-        last_ai_message=(
-            "Alpha 是当前能力。[citation:来源1](https://example.com/doc)"
-            if with_events
-            else "没有结构化事件的回答"
-        ),
+        last_ai_message=("Alpha 是当前能力。[citation:来源1](https://example.com/doc)" if with_events else "没有结构化事件的回答"),
     )
 
 
@@ -159,12 +155,8 @@ async def test_persisted_events_survive_restart_and_validate_idempotently(
     first_engine = create_async_engine(url)
     async with first_engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-    first_store = DbRunEventStore(
-        async_sessionmaker(first_engine, expire_on_commit=False)
-    )
-    await first_store.put_batch(
-        persisted_events(thread_id="thread-1", run_id="run-1", user_id="u1")
-    )
+    first_store = DbRunEventStore(async_sessionmaker(first_engine, expire_on_commit=False))
+    await first_store.put_batch(persisted_events(thread_id="thread-1", run_id="run-1", user_id="u1"))
     await first_engine.dispose()
 
     second_engine = create_async_engine(url)
@@ -187,9 +179,7 @@ async def test_persisted_events_survive_restart_and_validate_idempotently(
     )
 
     try:
-        assert await event_store.list_events(
-            "thread-1", "run-1", user_id="u2"
-        ) == []
+        assert await event_store.list_events("thread-1", "run-1", user_id="u2") == []
 
         first = await service.process_run(
             thread_id="thread-1",

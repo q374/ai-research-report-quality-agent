@@ -427,11 +427,7 @@ def _make_lead_agent(config: RunnableConfig, *, app_config: AppConfig):
     max_concurrent_subagents = cfg.get("max_concurrent_subagents", 3)
     is_bootstrap = cfg.get("is_bootstrap", False)
     agent_name = validate_agent_name(cfg.get("agent_name"))
-    evidence_profile = (
-        None
-        if is_bootstrap
-        else resolve_evidence_profile(config, resolved_app_config)
-    )
+    evidence_profile = None if is_bootstrap else resolve_evidence_profile(config, resolved_app_config)
 
     agent_config = load_agent_config(agent_name) if not is_bootstrap else None
     available_skills = _available_skill_names(agent_config, is_bootstrap)

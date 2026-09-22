@@ -33,9 +33,7 @@ def test_requires_both_allowed_user_and_profile():
 
 
 def test_app_config_defaults_to_disabled_shadow_validation():
-    config = AppConfig.model_validate(
-        {"sandbox": {"use": "deerflow.sandbox.local:LocalSandboxProvider"}}
-    )
+    config = AppConfig.model_validate({"sandbox": {"use": "deerflow.sandbox.local:LocalSandboxProvider"}})
 
     assert config.evidence_validation == EvidenceValidationConfig()
 

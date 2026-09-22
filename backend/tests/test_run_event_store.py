@@ -17,17 +17,23 @@ def store():
 
 
 def test_backend_detection_prefers_actual_memory_store_over_db_config():
-    assert detect_event_store_backend(
-        MemoryRunEventStore(),
-        RunEventsConfig(backend="db"),
-    ) == "memory"
+    assert (
+        detect_event_store_backend(
+            MemoryRunEventStore(),
+            RunEventsConfig(backend="db"),
+        )
+        == "memory"
+    )
 
 
 def test_backend_detection_uses_frozen_config_for_unknown_store():
-    assert detect_event_store_backend(
-        object(),
-        RunEventsConfig(backend="jsonl"),
-    ) == "jsonl"
+    assert (
+        detect_event_store_backend(
+            object(),
+            RunEventsConfig(backend="jsonl"),
+        )
+        == "jsonl"
+    )
 
 
 # -- Basic write and query --

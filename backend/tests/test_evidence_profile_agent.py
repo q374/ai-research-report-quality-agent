@@ -111,10 +111,13 @@ def test_resolve_evidence_profile_rejects_invalid_brief_types(brief_patch: dict)
     brief = valid_brief()
     brief.update(brief_patch)
 
-    assert resolve_evidence_profile(
-        run_config(brief=brief),
-        make_app_config(),
-    ) is None
+    assert (
+        resolve_evidence_profile(
+            run_config(brief=brief),
+            make_app_config(),
+        )
+        is None
+    )
 
 
 def _install_agent_fakes(monkeypatch, *, deferred_inputs: list[list] | None = None) -> None:
@@ -164,14 +167,8 @@ def test_allowed_profile_injects_tool_middleware_and_static_prompt(monkeypatch) 
     )
 
     assert [tool.name for tool in result["tools"]] == ["submit_evidence_report"]
-    assert not any(
-        tool.name == "submit_evidence_report"
-        for tool in deferred_inputs[0]
-    )
-    assert any(
-        isinstance(middleware, EvidenceReportFinalizerMiddleware)
-        for middleware in result["middleware"]
-    )
+    assert not any(tool.name == "submit_evidence_report" for tool in deferred_inputs[0])
+    assert any(isinstance(middleware, EvidenceReportFinalizerMiddleware) for middleware in result["middleware"])
     assert "仅在完成研究后调用 submit_evidence_report 一次" in result["system_prompt"]
     assert "[citation:来源N](URL)" in result["system_prompt"]
     assert ALLOWED_USER not in result["system_prompt"]
@@ -199,8 +196,5 @@ def test_ineligible_or_bootstrap_agent_gets_no_finalizer_pair(
     )
 
     assert all(tool.name != "submit_evidence_report" for tool in result["tools"])
-    assert not any(
-        isinstance(middleware, EvidenceReportFinalizerMiddleware)
-        for middleware in result["middleware"]
-    )
+    assert not any(isinstance(middleware, EvidenceReportFinalizerMiddleware) for middleware in result["middleware"])
     assert "submit_evidence_report" not in result["system_prompt"]

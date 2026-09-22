@@ -39,9 +39,7 @@ def submission_event(message_id: str = "report-1", *, seq: int = 4) -> dict:
         "content": {
             "schema_version": "2.0",
             "message_id": message_id,
-            "rendered_text": (
-                "结论。[citation:来源1](https://example.com/doc?id=7#part)"
-            ),
+            "rendered_text": ("结论。[citation:来源1](https://example.com/doc?id=7#part)"),
             "claims": [claim()],
             "evidence": [evidence()],
         },
@@ -75,12 +73,7 @@ def fetch_events(*, truncated: bool = False, body: str = "正文 Alpha   Beta �
                     {
                         "id": "fetch-1",
                         "name": "web_fetch",
-                        "args": {
-                            "url": (
-                                "https://u:p@example.com/doc?token=secret"
-                                "&utm_source=x&id=7#part"
-                            )
-                        },
+                        "args": {"url": ("https://u:p@example.com/doc?token=secret&utm_source=x&id=7#part")},
                     },
                 ],
             },
@@ -156,10 +149,7 @@ def test_truncated_page_is_not_misclassified_as_missing_excerpt() -> None:
     collected = apply_collection_status(submission_event()["content"], index)
 
     assert collected["evidence"][0]["collection_status"] == "truncated"
-    assert all(
-        finding["rule_id"] != "excerpt_not_found"
-        for finding in collected["findings_input"]
-    )
+    assert all(finding["rule_id"] != "excerpt_not_found" for finding in collected["findings_input"])
 
 
 def test_unvisited_source_is_unobserved() -> None:
@@ -189,9 +179,7 @@ def test_select_submission_prefers_last_event_matching_final_ai_message() -> Non
 
 
 def test_select_submission_rejects_message_version_mismatch() -> None:
-    selected, gaps = select_evidence_submission(
-        [submission_event("report-1"), final_ai_event("different")]
-    )
+    selected, gaps = select_evidence_submission([submission_event("report-1"), final_ai_event("different")])
 
     assert selected is None
     assert "evidence_report_message_mismatch" in gaps
@@ -204,7 +192,4 @@ def test_visible_citation_and_claim_binding_mismatch_is_explicit() -> None:
 
     collected = apply_collection_status(payload, index)
 
-    assert any(
-        finding["rule_id"] == "citation_evidence_mismatch"
-        for finding in collected["findings_input"]
-    )
+    assert any(finding["rule_id"] == "citation_evidence_mismatch" for finding in collected["findings_input"])

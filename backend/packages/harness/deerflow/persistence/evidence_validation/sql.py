@@ -56,10 +56,7 @@ class EvidenceValidationRepository:
         }
         missing = [key for key, value in required.items() if not value]
         if missing:
-            raise ValueError(
-                "evidence validation record missing required fields: "
-                + ", ".join(sorted(missing))
-            )
+            raise ValueError("evidence validation record missing required fields: " + ", ".join(sorted(missing)))
 
         now = datetime.now(UTC)
         created_at = record.get("created_at")
@@ -97,15 +94,11 @@ class EvidenceValidationRepository:
             dialect = session.bind.dialect.name if session.bind is not None else ""
             if dialect == "sqlite":
                 statement = sqlite_insert(EvidenceValidationRow).values(**values)
-                statement = statement.on_conflict_do_nothing(
-                    index_elements=["run_id", "report_hash"]
-                )
+                statement = statement.on_conflict_do_nothing(index_elements=["run_id", "report_hash"])
                 await session.execute(statement)
             elif dialect == "postgresql":
                 statement = postgresql_insert(EvidenceValidationRow).values(**values)
-                statement = statement.on_conflict_do_nothing(
-                    index_elements=["run_id", "report_hash"]
-                )
+                statement = statement.on_conflict_do_nothing(index_elements=["run_id", "report_hash"])
                 await session.execute(statement)
             else:
                 session.add(EvidenceValidationRow(**values))
@@ -134,9 +127,7 @@ class EvidenceValidationRepository:
             EvidenceValidationRow.run_id == run_id,
         )
         if resolved_user_id is not None:
-            statement = statement.where(
-                EvidenceValidationRow.user_id == resolved_user_id
-            )
+            statement = statement.where(EvidenceValidationRow.user_id == resolved_user_id)
         statement = statement.order_by(EvidenceValidationRow.created_at.desc()).limit(1)
         async with self._sf() as session:
             row = (await session.execute(statement)).scalar_one_or_none()
@@ -175,10 +166,7 @@ class EvidenceValidationRepository:
                 idempotency_key=idempotency_key,
                 reason=reason,
             )
-            if (
-                updated["final_status"] == current["final_status"]
-                and updated["review_decisions"] == current["review_decisions"]
-            ):
+            if updated["final_status"] == current["final_status"] and updated["review_decisions"] == current["review_decisions"]:
                 return current
 
             # `SELECT ... FOR UPDATE` is ignored by SQLite. Use updated_at as an

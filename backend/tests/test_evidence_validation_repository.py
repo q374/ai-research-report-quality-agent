@@ -36,9 +36,7 @@ async def make_repository(db_path: Path):
     engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}")
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
-    return engine, EvidenceValidationRepository(
-        async_sessionmaker(engine, expire_on_commit=False)
-    )
+    return engine, EvidenceValidationRepository(async_sessionmaker(engine, expire_on_commit=False))
 
 
 async def count_rows(repo: EvidenceValidationRepository) -> int:
@@ -92,9 +90,7 @@ async def test_record_survives_sqlite_restart(tmp_path: Path):
 
     reopened = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}")
     try:
-        reopened_repo = EvidenceValidationRepository(
-            async_sessionmaker(reopened, expire_on_commit=False)
-        )
+        reopened_repo = EvidenceValidationRepository(async_sessionmaker(reopened, expire_on_commit=False))
         loaded = await reopened_repo.get_by_run("t1", "r1", user_id="u1")
 
         assert loaded is not None

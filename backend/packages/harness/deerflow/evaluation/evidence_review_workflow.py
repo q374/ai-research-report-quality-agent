@@ -144,12 +144,7 @@ def submit_review(
     for existing in existing_decisions:
         if existing.get("idempotency_key") != idempotency_key:
             continue
-        same_request = (
-            existing.get("reviewer_user_id") == actor_user_id
-            and existing.get("decision") == decision
-            and existing.get("reason", "") == normalized_reason
-            and existing.get("report_hash") == expected_report_hash
-        )
+        same_request = existing.get("reviewer_user_id") == actor_user_id and existing.get("decision") == decision and existing.get("reason", "") == normalized_reason and existing.get("report_hash") == expected_report_hash
         if not same_request:
             raise ValueError("同一幂等键不能用于不同的人工决定")
         return copy.deepcopy(record)
@@ -160,9 +155,7 @@ def submit_review(
     if decision == "approved" and record.get("final_status") != "review_required":
         raise ValueError("只有无阻断且仍处于待复核状态的报告可以批准")
 
-    decision_id = hashlib.sha256(
-        f"{record.get('validation_id')}:{idempotency_key}".encode()
-    ).hexdigest()[:24]
+    decision_id = hashlib.sha256(f"{record.get('validation_id')}:{idempotency_key}".encode()).hexdigest()[:24]
     review = {
         "decision_id": decision_id,
         "validation_id": record.get("validation_id"),

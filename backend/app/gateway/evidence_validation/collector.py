@@ -136,10 +136,7 @@ def collect_shadow_payload(
 
     observation_index = collect_observations(ordered_events)
     submission, submission_gaps = select_evidence_submission(ordered_events)
-    has_submission_event = any(
-        event.get("event_type") == "evidence.report.submitted"
-        for event in ordered_events
-    )
+    has_submission_event = any(event.get("event_type") == "evidence.report.submitted" for event in ordered_events)
     for gap in submission_gaps:
         if gap not in data_gaps:
             data_gaps.append(gap)

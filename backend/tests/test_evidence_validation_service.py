@@ -136,9 +136,7 @@ async def test_db_backend_does_not_mark_non_persistent_gap():
 async def test_ineligible_run_is_skipped():
     service = make_service(successful_run(), allowed_users=["u1"])
 
-    result = await service.process_run(
-        thread_id="t1", run_id="r1", owner_user_id="u2", source="auto"
-    )
+    result = await service.process_run(thread_id="t1", run_id="r1", owner_user_id="u2", source="auto")
 
     assert result is None
     assert service.repository.upsert.await_count == 0
@@ -150,9 +148,7 @@ async def test_unsuccessful_run_is_skipped():
     run["status"] = "error"
     service = make_service(run)
 
-    result = await service.process_run(
-        thread_id="t1", run_id="r1", owner_user_id="u1", source="auto"
-    )
+    result = await service.process_run(thread_id="t1", run_id="r1", owner_user_id="u1", source="auto")
 
     assert result is None
     assert service.event_store.list_events.await_count == 0

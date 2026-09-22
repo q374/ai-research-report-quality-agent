@@ -63,12 +63,8 @@ def test_evidence_candidate_rejects_agent_confirmed_status() -> None:
 
 
 def test_urls_strip_userinfo_and_sensitive_query_values() -> None:
-    safe = sanitize_source_url(
-        "https://u:p@example.com/doc?token=secret&utm_source=x&id=7#part"
-    )
-    rendered = sanitize_citation_links(
-        "结论。[citation:来源1](https://example.com/doc?api_key=secret&id=7)"
-    )
+    safe = sanitize_source_url("https://u:p@example.com/doc?token=secret&utm_source=x&id=7#part")
+    rendered = sanitize_citation_links("结论。[citation:来源1](https://example.com/doc?api_key=secret&id=7)")
 
     assert safe == "https://example.com/doc?id=7#part"
     assert rendered == "结论。[citation:来源1](https://example.com/doc?id=7)"
@@ -83,12 +79,8 @@ def test_source_url_only_accepts_http_and_https() -> None:
 
 def test_submission_sanitizes_structured_and_rendered_urls_consistently() -> None:
     payload = make_submission()
-    payload["evidence"][0]["source_url"] = (
-        "HTTPS://u:p@Example.COM/doc?access_token=secret&id=7#part"
-    )
-    payload["rendered_text"] = (
-        "结论。[citation:来源1](HTTPS://u:p@Example.COM/doc?access_token=secret&id=7#part)"
-    )
+    payload["evidence"][0]["source_url"] = "HTTPS://u:p@Example.COM/doc?access_token=secret&id=7#part"
+    payload["rendered_text"] = "结论。[citation:来源1](HTTPS://u:p@Example.COM/doc?access_token=secret&id=7#part)"
 
     submission = EvidenceReportSubmission.model_validate(payload)
 

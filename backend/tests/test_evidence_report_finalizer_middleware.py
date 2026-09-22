@@ -71,7 +71,10 @@ async def test_async_after_agent_matches_sync_result() -> None:
 def test_after_agent_ignores_unrelated_or_malformed_messages(message) -> None:
     middleware = EvidenceReportFinalizerMiddleware()
 
-    assert middleware.after_agent(
-        {"messages": [message]},
-        SimpleNamespace(context={}),
-    ) is None
+    assert (
+        middleware.after_agent(
+            {"messages": [message]},
+            SimpleNamespace(context={}),
+        )
+        is None
+    )

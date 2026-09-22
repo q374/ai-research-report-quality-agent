@@ -46,9 +46,7 @@ def make_evidence(evidence_id: str) -> dict:
 
 def tool_args() -> dict:
     return {
-        "rendered_text": (
-            "结论。[citation:来源1](https://example.com/doc?api_key=secret&id=7)"
-        ),
+        "rendered_text": ("结论。[citation:来源1](https://example.com/doc?api_key=secret&id=7)"),
         "claims": [make_claim("C1")],
         "evidence": [make_evidence("E1")],
     }

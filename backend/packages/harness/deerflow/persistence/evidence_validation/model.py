@@ -27,9 +27,7 @@ class EvidenceValidationRow(Base):
     final_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     review_decisions_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     semantic_evaluation: Mapped[str] = mapped_column(String(32), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

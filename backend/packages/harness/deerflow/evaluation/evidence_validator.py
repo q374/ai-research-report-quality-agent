@@ -42,11 +42,7 @@ def canonicalize_url(url: str) -> str:
     if not isinstance(url, str) or not url.strip():
         return ""
     parts = urlsplit(url.strip())
-    query = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if not key.lower().startswith("utm_") and key.lower() not in TRACKING_PARAMS
-    ]
+    query = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if not key.lower().startswith("utm_") and key.lower() not in TRACKING_PARAMS]
     return urlunsplit(
         (
             parts.scheme.lower(),
@@ -162,11 +158,7 @@ def validate(payload: dict) -> dict:
     }
     sections = {"brief": brief, "report": report, "audit": audit}
     missing_sections = [name for name in ("brief", "claims", "evidence", "report", "audit") if name not in payload]
-    missing_details = {
-        name: _missing_fields(sections[name], fields)
-        for name, fields in contract_requirements.items()
-        if _missing_fields(sections[name], fields)
-    }
+    missing_details = {name: _missing_fields(sections[name], fields) for name, fields in contract_requirements.items() if _missing_fields(sections[name], fields)}
     if missing_sections or missing_details:
         details = []
         if missing_sections:
@@ -182,19 +174,11 @@ def validate(payload: dict) -> dict:
             )
         )
 
-    evidence_by_id = {
-        item.get("evidence_id"): item
-        for item in evidence
-        if isinstance(item, dict) and item.get("evidence_id")
-    }
+    evidence_by_id = {item.get("evidence_id"): item for item in evidence if isinstance(item, dict) and item.get("evidence_id")}
 
     claim_fields = ("claim_id", "text", "claim_type", "dimension", "evidence_ids")
-    malformed_claims = [
-        index for index, item in enumerate(claims) if _missing_fields(item, claim_fields)
-    ]
-    malformed_evidence = [
-        index for index, item in enumerate(evidence) if _missing_evidence_fields(item)
-    ]
+    malformed_claims = [index for index, item in enumerate(claims) if _missing_fields(item, claim_fields)]
+    malformed_evidence = [index for index, item in enumerate(evidence) if _missing_evidence_fields(item)]
     if malformed_claims or malformed_evidence:
         parts = []
         if malformed_claims:
@@ -280,9 +264,7 @@ def validate(payload: dict) -> dict:
     # EV-01、EV-02、EV-03、EV-05、EV-08、EV-09：逐条结论校验。
     for claim in claims:
         if not isinstance(claim, dict):
-            findings.append(
-                _finding("EV-10", "blocker", "存在非对象格式的 Claim。", "修正 Claim 结构。")
-            )
+            findings.append(_finding("EV-10", "blocker", "存在非对象格式的 Claim。", "修正 Claim 结构。"))
             continue
         claim_id = claim.get("claim_id")
         text = str(claim.get("text", ""))
@@ -290,9 +272,7 @@ def validate(payload: dict) -> dict:
         evidence_ids = claim.get("evidence_ids") if isinstance(claim.get("evidence_ids"), list) else []
         bound = [evidence_by_id[eid] for eid in evidence_ids if eid in evidence_by_id]
 
-        if claim_type == "current_fact" and any(
-            marker in text for marker in HISTORICAL_NARRATIVE_MARKERS
-        ):
+        if claim_type == "current_fact" and any(marker in text for marker in HISTORICAL_NARRATIVE_MARKERS):
             findings.append(
                 _finding(
                     "EV-01",
@@ -318,12 +298,7 @@ def validate(payload: dict) -> dict:
                 )
 
         if claim_type == "current_fact" and bound:
-            has_eligible_source = any(
-                _collection_status(item) in {"observed", "truncated"}
-                if _is_live_evidence(item)
-                else item.get("status") == "confirmed" and item.get("current_source")
-                for item in bound
-            )
+            has_eligible_source = any(_collection_status(item) in {"observed", "truncated"} if _is_live_evidence(item) else item.get("status") == "confirmed" and item.get("current_source") for item in bound)
             if not has_eligible_source:
                 findings.append(
                     _finding(
@@ -339,9 +314,7 @@ def validate(payload: dict) -> dict:
         if any(marker in text for marker in NEGATIVE_MARKERS):
             lower_excerpts = " ".join(str(item.get("excerpt", "")).lower() for item in bound)
             for group in CONTRADICTION_GROUPS:
-                if any(term in text for term in group["claim_terms"]) and any(
-                    term in lower_excerpts for term in group["evidence_terms"]
-                ):
+                if any(term in text for term in group["claim_terms"]) and any(term in lower_excerpts for term in group["evidence_terms"]):
                     findings.append(
                         _finding(
                             "EV-03",
@@ -398,9 +371,7 @@ def validate(payload: dict) -> dict:
     # EV-04：必填维度覆盖。
     required_dimensions = brief.get("required_dimensions")
     required_dimensions = required_dimensions if isinstance(required_dimensions, list) else []
-    covered_dimensions = {
-        claim.get("dimension") for claim in claims if isinstance(claim, dict) and claim.get("dimension")
-    }
+    covered_dimensions = {claim.get("dimension") for claim in claims if isinstance(claim, dict) and claim.get("dimension")}
     missing_dimensions = sorted(set(required_dimensions) - covered_dimensions)
     if missing_dimensions:
         findings.append(
@@ -445,11 +416,7 @@ def validate(payload: dict) -> dict:
     forbidden_used = sorted(forbidden.intersection(used_tools))
     if forbidden_used:
         limit_failures.append("使用了禁用工具：" + "、".join(forbidden_used))
-    allowed_domains = {
-        str(domain).lower().strip(".")
-        for domain in brief.get("allowed_domains", [])
-        if isinstance(domain, str) and domain.strip(".")
-    } if isinstance(brief.get("allowed_domains"), list) else set()
+    allowed_domains = {str(domain).lower().strip(".") for domain in brief.get("allowed_domains", []) if isinstance(domain, str) and domain.strip(".")} if isinstance(brief.get("allowed_domains"), list) else set()
     disallowed_sources = []
     if allowed_domains:
         for item in evidence:
@@ -457,10 +424,7 @@ def validate(payload: dict) -> dict:
                 continue
             hostname = urlsplit(str(item.get("source_url", ""))).hostname
             hostname = hostname.lower().strip(".") if hostname else ""
-            if hostname and not any(
-                hostname == domain or hostname.endswith("." + domain)
-                for domain in allowed_domains
-            ):
+            if hostname and not any(hostname == domain or hostname.endswith("." + domain) for domain in allowed_domains):
                 disallowed_sources.append(str(item.get("evidence_id", hostname)))
     if disallowed_sources:
         limit_failures.append("证据来源超出允许域名：" + "、".join(sorted(disallowed_sources)))

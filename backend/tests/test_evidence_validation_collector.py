@@ -304,9 +304,7 @@ def test_live_current_fact_with_historical_narrative_is_blocked():
 
     result = validate(payload)
 
-    currentness_findings = [
-        finding for finding in result["findings"] if finding["rule_id"] == "EV-01"
-    ]
+    currentness_findings = [finding for finding in result["findings"] if finding["rule_id"] == "EV-01"]
     assert result["status"] == "blocked"
     assert len(currentness_findings) == 1
     assert "historical_fact" in currentness_findings[0]["required_action"]

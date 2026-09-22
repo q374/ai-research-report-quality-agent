@@ -38,11 +38,7 @@ _SENSITIVE_QUERY_KEYS = {
 
 def _drop_query_key(key: str) -> bool:
     normalized = key.strip().lower()
-    return (
-        normalized.startswith("utm_")
-        or normalized in _TRACKING_QUERY_KEYS
-        or normalized in _SENSITIVE_QUERY_KEYS
-    )
+    return normalized.startswith("utm_") or normalized in _TRACKING_QUERY_KEYS or normalized in _SENSITIVE_QUERY_KEYS
 
 
 def sanitize_source_url(value: str) -> str:
@@ -63,14 +59,8 @@ def sanitize_source_url(value: str) -> str:
     except ValueError as exc:
         raise ValueError("source_url contains an invalid port") from exc
     netloc = f"{hostname}:{port}" if port is not None else hostname
-    query = [
-        (key, item)
-        for key, item in parse_qsl(parts.query, keep_blank_values=True)
-        if not _drop_query_key(key)
-    ]
-    return urlunsplit(
-        (scheme, netloc, parts.path or "/", urlencode(query), parts.fragment)
-    )
+    query = [(key, item) for key, item in parse_qsl(parts.query, keep_blank_values=True) if not _drop_query_key(key)]
+    return urlunsplit((scheme, netloc, parts.path or "/", urlencode(query), parts.fragment))
 
 
 def sanitize_citation_links(markdown: str) -> str:
@@ -99,9 +89,7 @@ class ClaimCandidate(BaseModel):
 
     claim_id: str
     text: str
-    claim_type: Literal[
-        "current_fact", "historical_fact", "review_question", "unknown"
-    ]
+    claim_type: Literal["current_fact", "historical_fact", "review_question", "unknown"]
     dimension: str
     is_key: bool
     evidence_ids: list[str]

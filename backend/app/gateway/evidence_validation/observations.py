@@ -167,11 +167,7 @@ def _final_ai_message_id(events: list[dict]) -> str:
 def select_evidence_submission(events: list[dict]) -> tuple[dict | None, list[str]]:
     """选择与最终 AI 消息匹配的最后一份合法证据提交。"""
     gaps: list[str] = []
-    submission_events = [
-        event
-        for event in _ordered_events(events)
-        if event.get("event_type") == "evidence.report.submitted"
-    ]
+    submission_events = [event for event in _ordered_events(events) if event.get("event_type") == "evidence.report.submitted"]
     if len(submission_events) > 1:
         gaps.append("duplicate_evidence_report_events")
 
@@ -217,9 +213,7 @@ def _normalized_text(value: object) -> str:
 def apply_collection_status(submission: Mapping[str, Any], index: ObservationIndex) -> dict:
     """用系统观察补齐状态；忽略智能体自报的系统字段。"""
     claims = [dict(item) for item in submission.get("claims", []) if isinstance(item, Mapping)]
-    evidence_items = [
-        dict(item) for item in submission.get("evidence", []) if isinstance(item, Mapping)
-    ]
+    evidence_items = [dict(item) for item in submission.get("evidence", []) if isinstance(item, Mapping)]
     findings: list[dict] = []
     evidence_by_id: dict[str, dict] = {}
 
@@ -237,9 +231,7 @@ def apply_collection_status(submission: Mapping[str, Any], index: ObservationInd
         page = pages_by_url.get(canonical)
         item["canonical_url"] = canonical
         item["accessed_at"] = page.accessed_at if page else None
-        item["collection_status"] = (
-            "truncated" if page and page.truncated else "observed" if page else "unobserved"
-        )
+        item["collection_status"] = "truncated" if page and page.truncated else "observed" if page else "unobserved"
         item["review_status"] = "pending"
         evidence_id = str(item.get("evidence_id", ""))
         if evidence_id:
@@ -256,21 +248,9 @@ def apply_collection_status(submission: Mapping[str, Any], index: ObservationInd
                     }
                 )
 
-    cited_ids = {
-        str(evidence_id)
-        for claim in claims
-        for evidence_id in claim.get("citation_evidence_ids", [])
-        if isinstance(claim.get("citation_evidence_ids"), list)
-    }
-    cited_urls = {
-        canonicalize_url(url)
-        for url in extract_citation_urls(str(submission.get("rendered_text", "")))
-    }
-    bound_urls = {
-        item["canonical_url"]
-        for evidence_id, item in evidence_by_id.items()
-        if evidence_id in cited_ids and item.get("canonical_url")
-    }
+    cited_ids = {str(evidence_id) for claim in claims for evidence_id in claim.get("citation_evidence_ids", []) if isinstance(claim.get("citation_evidence_ids"), list)}
+    cited_urls = {canonicalize_url(url) for url in extract_citation_urls(str(submission.get("rendered_text", "")))}
+    bound_urls = {item["canonical_url"] for evidence_id, item in evidence_by_id.items() if evidence_id in cited_ids and item.get("canonical_url")}
     if cited_urls != bound_urls:
         findings.append(
             {
@@ -280,9 +260,7 @@ def apply_collection_status(submission: Mapping[str, Any], index: ObservationInd
             }
         )
 
-    unique_sources = {
-        item["canonical_url"] for item in evidence_items if item.get("canonical_url")
-    }
+    unique_sources = {item["canonical_url"] for item in evidence_items if item.get("canonical_url")}
     metrics = {
         "rendered_char_count": len(str(submission.get("rendered_text", ""))),
         "claim_count": len(claims),
