@@ -73,8 +73,12 @@ describe("getEvidenceValidation", () => {
   });
 
   test("returns null when the run has no validation record", async () => {
-    mockedFetch.mockResolvedValueOnce(jsonResponse(404, { detail: "not found" }));
-    await expect(getEvidenceValidation("thread-1", "run-1")).resolves.toBeNull();
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse(404, { detail: "not found" }),
+    );
+    await expect(
+      getEvidenceValidation("thread-1", "run-1"),
+    ).resolves.toBeNull();
   });
 
   test("prefers the persisted manual final status", async () => {
@@ -91,7 +95,9 @@ describe("getEvidenceValidation", () => {
       }),
     );
 
-    await expect(getEvidenceValidation("thread-1", "run-1")).resolves.toMatchObject({
+    await expect(
+      getEvidenceValidation("thread-1", "run-1"),
+    ).resolves.toMatchObject({
       validation_id: "v1",
       report_hash: "hash-1",
       status: "confirmed",
@@ -103,12 +109,12 @@ describe("getEvidenceValidation", () => {
 
 describe("submitEvidenceReview", () => {
   test("reuses a stable idempotency key for the same report decision", () => {
-    expect(
-      buildEvidenceReviewIdempotencyKey("validation-1", "approved"),
-    ).toBe("evidence-review:validation-1:approved");
-    expect(
-      buildEvidenceReviewIdempotencyKey("validation-1", "approved"),
-    ).toBe("evidence-review:validation-1:approved");
+    expect(buildEvidenceReviewIdempotencyKey("validation-1", "approved")).toBe(
+      "evidence-review:validation-1:approved",
+    );
+    expect(buildEvidenceReviewIdempotencyKey("validation-1", "approved")).toBe(
+      "evidence-review:validation-1:approved",
+    );
   });
 
   test("submits an approval bound to the current report hash", async () => {
