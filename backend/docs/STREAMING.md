@@ -305,12 +305,14 @@ sequenceDiagram
 
 ```python
 # tests/test_client.py::test_messages_mode_emits_token_deltas
-agent.stream.return_value = iter([
-    ("messages", (AIMessageChunk(content="Hel", id="ai-1"), {})),
-    ("messages", (AIMessageChunk(content="lo ", id="ai-1"), {})),
-    ("messages", (AIMessageChunk(content="world!", id="ai-1"), {})),
-    ("values", {"messages": [HumanMessage(...), AIMessage(content="Hello world!", id="ai-1")]}),
-])
+agent.stream.return_value = iter(
+    [
+        ("messages", (AIMessageChunk(content="Hel", id="ai-1"), {})),
+        ("messages", (AIMessageChunk(content="lo ", id="ai-1"), {})),
+        ("messages", (AIMessageChunk(content="world!", id="ai-1"), {})),
+        ("values", {"messages": [HumanMessage(...), AIMessage(content="Hello world!", id="ai-1")]}),
+    ]
+)
 # ...
 assert [e.data["content"] for e in ai_text_events] == ["Hel", "lo ", "world!"]
 assert len(ai_text_events) == 3  # values snapshot must NOT re-synthesize
