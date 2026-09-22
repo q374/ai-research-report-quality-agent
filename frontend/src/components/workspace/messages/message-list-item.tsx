@@ -150,8 +150,8 @@ export function MessageListItem({
         <MessageToolbar
           className={cn(
             isHuman
-              ? "absolute right-0 -bottom-9 left-0 justify-end"
-              : "absolute right-0 bottom-0 left-0",
+              ? "absolute -bottom-9 left-0 right-0 justify-end"
+              : "absolute bottom-0 left-0 right-0",
             "z-20 opacity-0 transition-opacity delay-200 duration-300 group-hover/conversation-message:opacity-100",
           )}
         >
@@ -297,7 +297,7 @@ function MessageContent_({
       <AIElementMessageContent className={className}>
         <Task defaultOpen={false}>
           <TaskTrigger title="">
-            <div className="text-muted-foreground flex w-full cursor-default items-center gap-2 text-sm select-none">
+            <div className="text-muted-foreground flex w-full cursor-default select-none items-center gap-2 text-sm">
               <Loader className="size-4" />
               <span>{contentToDisplay}</span>
             </div>
@@ -327,14 +327,14 @@ function MessageContent_({
     return (
       <div
         className={cn(
-          "ml-auto flex max-w-full min-w-0 flex-col gap-2",
+          "ml-auto flex min-w-0 max-w-full flex-col gap-2",
           className,
         )}
       >
         {filesList}
         {contentToDisplay && (
           <AIElementMessageContent className="w-full max-w-full">
-            <div className="break-words whitespace-pre-wrap">
+            <div className="whitespace-pre-wrap break-words">
               {contentToDisplay}
             </div>
           </AIElementMessageContent>
@@ -450,7 +450,7 @@ function RichFileCard({
 
   if (isUploading) {
     return (
-      <div className="bg-background border-border/40 flex max-w-50 min-w-30 flex-col gap-1 rounded-lg border p-3 opacity-60 shadow-sm">
+      <div className="bg-background border-border/40 max-w-50 min-w-30 flex flex-col gap-1 rounded-lg border p-3 opacity-60 shadow-sm">
         <div className="flex items-start gap-2">
           <Loader2Icon className="text-muted-foreground mt-0.5 size-4 shrink-0 animate-spin" />
           <span
@@ -485,7 +485,7 @@ function RichFileCard({
         href={fileUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="group border-border/40 relative block overflow-hidden rounded-lg border"
+        className="border-border/40 group relative block overflow-hidden rounded-lg border"
       >
         <img
           src={fileUrl}
@@ -497,7 +497,7 @@ function RichFileCard({
   }
 
   return (
-    <div className="bg-background border-border/40 flex max-w-50 min-w-30 flex-col gap-1 rounded-lg border p-3 shadow-sm">
+    <div className="bg-background border-border/40 max-w-50 min-w-30 flex flex-col gap-1 rounded-lg border p-3 shadow-sm">
       <div className="flex items-start gap-2">
         <FileIcon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
         <span
