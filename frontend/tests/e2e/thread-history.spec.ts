@@ -91,7 +91,10 @@ test.describe("Thread history", () => {
 
     const citation = page.getByRole("link", { name: "来源1" });
     await expect(citation).toBeVisible({ timeout: 15_000 });
-    await expect(citation).toHaveAttribute("href", "https://example.com/source");
+    await expect(citation).toHaveAttribute(
+      "href",
+      "https://example.com/source",
+    );
     await expect(citation).toHaveAttribute("target", "_blank");
     await expect(citation).toHaveAttribute("rel", /noopener/);
     await expect(citation).toHaveAttribute("rel", /noreferrer/);
@@ -149,7 +152,9 @@ test.describe("Thread history", () => {
     await expect(banner).toContainText("修正引用与证据绑定");
     const bannerBox = await banner.boundingBox();
     expect(bannerBox?.y).toBeGreaterThanOrEqual(48);
-    await expect(banner.getByRole("button", { name: "确认通过" })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "确认通过" })).toHaveCount(
+      0,
+    );
   });
 
   test("reviewer approval is bound to the report hash and updates the banner", async ({
@@ -166,7 +171,10 @@ test.describe("Thread history", () => {
     });
     let submittedReview: Record<string, unknown> | undefined;
     await page.route("**/evidence-validation/reviews", async (route) => {
-      submittedReview = route.request().postDataJSON() as Record<string, unknown>;
+      submittedReview = route.request().postDataJSON() as Record<
+        string,
+        unknown
+      >;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
