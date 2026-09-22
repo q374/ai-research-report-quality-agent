@@ -21,6 +21,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2] / "scripts"))
 # Include backend migration helpers even when the root scripts package is loaded.
 scripts = importlib.import_module("scripts")
 scripts.__path__.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+scripts.__path__.append(str(Path(__file__).resolve().parents[2] / "scripts"))
 
 # Break the circular import chain that exists in production code:
 #   deerflow.subagents.__init__
