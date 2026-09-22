@@ -103,6 +103,7 @@ You can enable/disable plan mode dynamically for different conversations or task
 from langchain_core.runnables import RunnableConfig
 from deerflow.agents.lead_agent.agent import make_lead_agent
 
+
 def create_agent_for_task(task_complexity: str):
     """Create agent with plan mode based on task complexity."""
     is_complex = task_complexity in ["high", "very_high"]
@@ -116,6 +117,7 @@ def create_agent_for_task(task_complexity: str):
     )
 
     return make_lead_agent(config)
+
 
 # Simple task - no TodoList needed
 simple_agent = create_agent_for_task("low")

@@ -13,12 +13,7 @@ The `run_in_background` parameter has been removed from the `task` tool. All sub
 **Before:**
 ```python
 # LLM had to manage polling
-task_id = task(
-    subagent_type="bash",
-    prompt="Run tests",
-    description="Run tests",
-    run_in_background=True
-)
+task_id = task(subagent_type="bash", prompt="Run tests", description="Run tests", run_in_background=True)
 # Then LLM had to poll repeatedly:
 while True:
     status = task_status(task_id)
@@ -29,11 +24,7 @@ while True:
 **After:**
 ```python
 # Tool blocks until complete, polling happens in backend
-result = task(
-    subagent_type="bash",
-    prompt="Run tests",
-    description="Run tests"
-)
+result = task(subagent_type="bash", prompt="Run tests", description="Run tests")
 # Result is available immediately after the call returns
 ```
 
@@ -156,11 +147,7 @@ To verify the changes work correctly:
 Example test scenario:
 ```python
 # This should block for ~10 seconds then return result
-result = task(
-    subagent_type="bash",
-    prompt="sleep 10 && echo 'Done'",
-    description="Test task"
-)
+result = task(subagent_type="bash", prompt="sleep 10 && echo 'Done'", description="Test task")
 # result should contain "Done"
 ```
 

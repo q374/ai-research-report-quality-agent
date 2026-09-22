@@ -81,11 +81,13 @@ Example interceptor that injects auth headers from LangGraph metadata:
 def build_auth_interceptor():
     async def interceptor(request, handler):
         from langgraph.config import get_config
+
         metadata = get_config().get("metadata", {})
         headers = dict(request.headers or {})
         if token := metadata.get("auth_token"):
             headers["X-Auth-Token"] = token
         return await handler(request.override(headers=headers))
+
     return interceptor
 ```
 

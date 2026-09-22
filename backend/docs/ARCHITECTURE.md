@@ -136,12 +136,12 @@ class ThreadState(AgentState):
     messages: list[BaseMessage]
 
     # DeerFlow extensions
-    sandbox: dict             # Sandbox environment info
-    artifacts: list[str]      # Generated file paths
-    thread_data: dict         # {workspace, uploads, outputs} paths
-    title: str | None         # Auto-generated conversation title
-    todos: list[dict]         # Task tracking (plan mode)
-    viewed_images: dict       # Vision model image data
+    sandbox: dict  # Sandbox environment info
+    artifacts: list[str]  # Generated file paths
+    thread_data: dict  # {workspace, uploads, outputs} paths
+    title: str | None  # Auto-generated conversation title
+    todos: list[dict]  # Task tracking (plan mode)
+    viewed_images: dict  # Vision model image data
 ```
 
 ### Sandbox System

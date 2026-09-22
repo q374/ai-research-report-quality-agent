@@ -202,8 +202,8 @@ return "".join(chunks.get(last_id, ()))
 `DeerFlowClient.stream()` 在一次调用生命周期内维护三个 `set[str]`：
 
 ```python
-seen_ids: set[str] = set()           # values 路径内部 dedup
-streamed_ids: set[str] = set()       # messages → values 跨模式 dedup
+seen_ids: set[str] = set()  # values 路径内部 dedup
+streamed_ids: set[str] = set()  # messages → values 跨模式 dedup
 counted_usage_ids: set[str] = set()  # usage_metadata 幂等计数
 ```
 

@@ -19,6 +19,7 @@ DeerFlow 的文件上传系统返回三种不同的路径，每种路径用于�
 ```python
 # Python 代码中直接访问
 from pathlib import Path
+
 file_path = Path("backend/.deer-flow/threads/abc123/user-data/uploads/document.pdf")
 content = file_path.read_bytes()
 ```
@@ -146,13 +147,14 @@ async function uploadAndProcess(threadId: string, file: File) {
 from pathlib import Path
 from deerflow.agents.middlewares.thread_data_middleware import THREAD_DATA_BASE_DIR
 
+
 def process_uploaded_file(thread_id: str, filename: str):
     # 使用实际路径
     base_dir = Path.cwd() / THREAD_DATA_BASE_DIR / thread_id / "user-data" / "uploads"
     file_path = base_dir / filename
 
     # 直接读取
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         content = f.read()
 
     return content

@@ -42,9 +42,7 @@ class ThreadState(AgentState):
 # 在 langgraph.json 同级目录创建 checkpointer.py
 from langgraph.checkpoint.postgres import PostgresSaver
 
-checkpointer = PostgresSaver.from_conn_string(
-    "postgresql://user:pass@localhost/dbname"
-)
+checkpointer = PostgresSaver.from_conn_string("postgresql://user:pass@localhost/dbname")
 ```
 
 然后在 `langgraph.json` 中引用：
@@ -75,11 +73,13 @@ title:
 ```python
 from deerflow.config.title_config import TitleConfig, set_title_config
 
-set_title_config(TitleConfig(
-    enabled=True,
-    max_words=8,
-    max_chars=80,
-))
+set_title_config(
+    TitleConfig(
+        enabled=True,
+        max_words=8,
+        max_chars=80,
+    )
+)
 ```
 
 ## 客户端使用
@@ -188,6 +188,7 @@ sequenceDiagram
 # 测试 title 生成
 import pytest
 from deerflow.agents.title_middleware import TitleMiddleware
+
 
 def test_title_generation():
     # TODO: 添加单元测试

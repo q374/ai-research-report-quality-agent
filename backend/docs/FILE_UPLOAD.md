@@ -191,10 +191,7 @@ files = [
     ("files", open("document.pdf", "rb")),
     ("files", open("presentation.pptx", "rb")),
 ]
-response = requests.post(
-    f"{base_url}/api/threads/{thread_id}/uploads",
-    files=files
-)
+response = requests.post(f"{base_url}/api/threads/{thread_id}/uploads", files=files)
 print(response.json())
 
 # 列出文件
@@ -202,9 +199,7 @@ response = requests.get(f"{base_url}/api/threads/{thread_id}/uploads/list")
 print(response.json())
 
 # 删除文件
-response = requests.delete(
-    f"{base_url}/api/threads/{thread_id}/uploads/document.pdf"
-)
+response = requests.delete(f"{base_url}/api/threads/{thread_id}/uploads/document.pdf")
 print(response.json())
 ```
 

@@ -45,8 +45,8 @@ import {
 import { useRehypeSplitWordsIntoSpans } from "@/core/rehype";
 import { cn } from "@/lib/utils";
 
-import { CopyButton } from "../copy-button";
 import { CitationLink } from "../citations/citation-link";
+import { CopyButton } from "../copy-button";
 
 import { MarkdownContent } from "./markdown-content";
 
