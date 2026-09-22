@@ -552,12 +552,13 @@ async def _capture_start_run_graph_input(body):
     from types import SimpleNamespace
     from unittest.mock import patch
 
+    from langgraph.checkpoint.memory import InMemorySaver
+    from langgraph.store.memory import InMemoryStore
+
     from app.gateway.services import start_run
     from deerflow.persistence.thread_meta.memory import MemoryThreadMetaStore
     from deerflow.runtime import RunManager
     from deerflow.runtime.runs.store.memory import MemoryRunStore
-    from langgraph.checkpoint.memory import InMemorySaver
-    from langgraph.store.memory import InMemoryStore
 
     run_manager = RunManager(store=MemoryRunStore())
     state = SimpleNamespace(
@@ -719,6 +720,7 @@ def test_start_run_passes_authenticated_user_to_shadow_validation(_stub_app_conf
 
     from langgraph.checkpoint.memory import InMemorySaver
     from langgraph.store.memory import InMemoryStore
+
     from app.gateway.services import start_run
     from deerflow.persistence.thread_meta.memory import MemoryThreadMetaStore
     from deerflow.runtime import RunManager
