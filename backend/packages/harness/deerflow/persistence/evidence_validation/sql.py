@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
@@ -175,8 +175,57 @@ class EvidenceValidationRepository:
                 idempotency_key=idempotency_key,
                 reason=reason,
             )
-            row.final_status = str(updated["final_status"])
-            row.review_decisions_json = updated["review_decisions"]
+            if (
+                updated["final_status"] == current["final_status"]
+                and updated["review_decisions"] == current["review_decisions"]
+            ):
+                return current
+
+            # `SELECT ... FOR UPDATE` is ignored by SQLite. Use updated_at as an
+            # optimistic concurrency token so two conflicting decisions cannot both
+            # overwrite the same report version.
+            update_result = await session.execute(
+                update(EvidenceValidationRow)
+                .where(
+                    EvidenceValidationRow.validation_id == validation_id,
+                    EvidenceValidationRow.user_id == user_id,
+                    EvidenceValidationRow.updated_at == row.updated_at,
+                )
+                .values(
+                    final_status=str(updated["final_status"]),
+                    review_decisions_json=updated["review_decisions"],
+                    updated_at=datetime.now(UTC),
+                )
+            )
+            if update_result.rowcount != 1:
+                await session.rollback()
+                latest_row = (
+                    await session.execute(
+                        select(EvidenceValidationRow).where(
+                            EvidenceValidationRow.validation_id == validation_id,
+                            EvidenceValidationRow.user_id == user_id,
+                        )
+                    )
+                ).scalar_one_or_none()
+                if latest_row is None:
+                    raise LookupError("Evidence validation not found")
+                latest = self._row_to_dict(latest_row)
+                return apply_review_decision(
+                    latest,
+                    actor_user_id=user_id,
+                    decision=decision,
+                    expected_report_hash=expected_report_hash,
+                    idempotency_key=idempotency_key,
+                    reason=reason,
+                )
+
             await session.commit()
-            await session.refresh(row)
-            return self._row_to_dict(row)
+            stored = (
+                await session.execute(
+                    select(EvidenceValidationRow).where(
+                        EvidenceValidationRow.validation_id == validation_id,
+                        EvidenceValidationRow.user_id == user_id,
+                    )
+                )
+            ).scalar_one()
+            return self._row_to_dict(stored)
