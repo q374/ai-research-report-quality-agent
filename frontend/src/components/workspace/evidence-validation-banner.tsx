@@ -135,7 +135,7 @@ export function EvidenceValidationBanner({
 
   return (
     <div
-      className="max-w-(--container-width-md) mx-auto mb-2 mt-12 flex w-full shrink-0 items-start gap-2 rounded-lg border px-3 py-2 text-xs"
+      className="mx-auto mt-12 mb-2 flex w-full max-w-(--container-width-md) shrink-0 items-start gap-2 rounded-lg border px-3 py-2 text-xs"
       role="status"
       data-testid="evidence-validation-banner"
     >
