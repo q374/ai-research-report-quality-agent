@@ -35,9 +35,9 @@ export function summarizeEvidenceValidation(
       ? "质量校验：暂不建议发布"
       : record.status === "rejected"
         ? "质量校验：已拒绝发布"
-      : record.status === "confirmed"
-        ? "质量校验：已通过"
-        : "质量校验：需要人工复核";
+        : record.status === "confirmed"
+          ? "质量校验：已通过"
+          : "质量校验：需要人工复核";
   const countText = [
     blockers > 0 ? `${blockers} 个阻断问题` : "没有阻断问题",
     warnings > 0 ? `${warnings} 个提醒` : null,
@@ -164,7 +164,10 @@ export function EvidenceValidationBanner({
           </ul>
         )}
         {canReview && (
-          <div className="mt-2 space-y-2" data-testid="evidence-review-controls">
+          <div
+            className="mt-2 space-y-2"
+            data-testid="evidence-review-controls"
+          >
             <Textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
