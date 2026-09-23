@@ -23,7 +23,9 @@
 
 ## 验证结果
 
-项目先使用固定样例进行零费用回归，再以真实 API 完成研究任务复测：
+项目先使用固定样例进行零费用回归，再完成两次不同研究任务的真实 API 验证。以下分别列出，避免混用数据：
+
+**T001 结构化复测：**
 
 | 验证项 | 结果 |
 |---|---|
@@ -34,6 +36,8 @@
 | 质量控制结果 | 运行成功，但因质量规则未通过而阻断发布 |
 
 这一结果体现了项目目标：**不以“生成成功”为终点，而是在证据不足时阻止低可信报告进入发布流程。**
+
+**Dify 产品研究样本：**最终正文 4,180 字符，提交 8 个 Claim、8 条 Evidence；运行约 57 秒，质量门禁识别出 12 个阻断项和 1 个警告。该样本的原始运行记录未保存代码提交号，因此只作为历史样本，不代表当前 GitHub 版本的性能承诺。详见[脱敏记录](./docs/product/evidence-validator-results/DIFY_REAL_SAMPLE_8CLAIM_8EVIDENCE.md)。
 
 ## 个人贡献
 
@@ -62,6 +66,8 @@ make docker-start
 - [证据校验器规格](./docs/product/EVIDENCE_VALIDATOR_SPEC.md)
 - [阶段三联合验收](./docs/product/evidence-validator-results/STAGE3_REVIEW_JOINT_ACCEPTANCE.md)
 - [真实账号界面验收](./docs/product/evidence-validator-results/P0_1_REAL_ACCOUNT_UI_ACCEPTANCE.md)
+- [T001 真实 API 复测记录](./docs/product/evidence-validator-results/T001_B1_1_REAL_SAMPLE.md)
+- [Dify 真实 API 样本记录](./docs/product/evidence-validator-results/DIFY_REAL_SAMPLE_8CLAIM_8EVIDENCE.md)
 
 ## 当前边界
 
@@ -74,14 +80,12 @@ make docker-start
 
 本项目基于 [DeerFlow 2.0](https://github.com/bytedance/deer-flow) 开展产品化扩展，复用了其研究运行框架、工具链和基础界面；本仓库新增的工作集中在证据结构、确定性校验、人工复核、发布门禁与验收材料。上游说明见 [README_DEERFLOW_UPSTREAM.md](./README_DEERFLOW_UPSTREAM.md)。
 
-## License
-
-遵循仓库中的开源许可文件与上游项目许可要求。
-
-
-
 ## 产品界面预览
 
 ![研究报告质量控制界面](ai-research-quality-control.png)
 
 > 作品集展示图：离线证据校验原型，使用合成评测样本，不代表生产部署或真实用户效果。
+
+## License
+
+遵循仓库中的开源许可文件与上游项目许可要求。
